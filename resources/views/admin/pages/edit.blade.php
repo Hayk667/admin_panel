@@ -9,6 +9,8 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
+                    <x-notification />
+                    <x-validation-errors class="mb-4" />
                     <form method="POST" action="{{ route('admin.pages.update', $page) }}" id="page-form">
                         @csrf
                         @method('PUT')
@@ -60,6 +62,7 @@
     </div>
 
     @push('scripts')
+    <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.api_key', 'no-api-key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const languages = @json($languages->map(fn($l) => ['code' => $l->code, 'name' => $l->name]));
@@ -112,6 +115,7 @@
                     case 'send_email_form':
                         data.form_title = { ...langObj };
                         data.email_label = { ...langObj };
+                        data.content = { ...langObj };
                         data.content_label = { ...langObj };
                         data.send_button = { ...langObj };
                         break;
@@ -128,6 +132,23 @@
             }
 
             function syncSectionsInput() {
+                if (typeof tinymce !== 'undefined') {
+                    sections.forEach(section => {
+                        if (section.type === 'description' && section.data.content) {
+                            languages.forEach(l => {
+                                const editorId = 'page-section-' + section.id + '-desc-' + l.code;
+                                const ed = tinymce.get(editorId);
+                                if (ed) section.data.content[l.code] = ed.getContent();
+                            });
+                        } else if (section.type === 'send_email_form' && section.data.content) {
+                            languages.forEach(l => {
+                                const editorId = 'page-section-' + section.id + '-form-content-' + l.code;
+                                const ed = tinymce.get(editorId);
+                                if (ed) section.data.content[l.code] = ed.getContent();
+                            });
+                        }
+                    });
+                }
                 document.getElementById('sections-input').value = JSON.stringify(sections);
             }
 
@@ -159,7 +180,55 @@
                         toggleBtn.textContent = 'Collapse';
                         toggleBtn.setAttribute('aria-expanded', 'true');
                     }
+                    if (typeof tinymce !== 'undefined' && editor) {
+                        editor.querySelectorAll('.editor').forEach(ta => {
+                            if (ta.id && !tinymce.get(ta.id)) initSectionEditor(ta);
+                        });
+                    }
                 }
+            }
+
+            function initSectionEditor(ta) {
+                const sectionId = ta.closest('.section-item').dataset.sectionId;
+                const section = sections.find(s => s.id === sectionId);
+                const lang = ta.dataset.lang;
+                const key = ta.dataset.key;
+                tinymce.init({
+                    selector: '#' + ta.id,
+                    height: 400,
+                    menubar: false,
+                    plugins: [
+                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                        'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount'
+                    ],
+                    toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image | removeformat | code | help',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                    extended_valid_elements: '+iframe[src|width|height|frameborder|allowfullscreen|allow|title|class|style]',
+                    valid_children: '+body[iframe]',
+                    images_upload_handler: function (blobInfo, progress) {
+                        return new Promise((resolve, reject) => {
+                            const formData = new FormData();
+                            formData.append('image', blobInfo.blob(), blobInfo.filename());
+                            formData.append('_token', '{{ csrf_token() }}');
+                            fetch('{{ route("admin.upload.image") }}', { method: 'POST', body: formData })
+                                .then(r => r.ok ? r.json() : Promise.reject(new Error('Upload failed')))
+                                .then(result => result.location ? resolve(result.location) : reject(result.error || 'Unknown'))
+                                .catch(e => reject(e.message || 'Upload failed'));
+                        });
+                    },
+                    automatic_uploads: true,
+                    file_picker_types: 'image',
+                    setup: function(ed) {
+                        ed.on('change', function() {
+                            if (section && section.data[key]) {
+                                section.data[key][lang] = ed.getContent();
+                                syncSectionsInput();
+                            }
+                        });
+                        ed.on('init', function() { ed.save(); });
+                    }
+                });
             }
 
             function updateSectionData(id, data) {
@@ -220,7 +289,7 @@
                     inner = languages.map(l => `
                         <div class="mb-2">
                             <label class="block text-xs text-gray-500 dark:text-gray-400">Content (${l.code})</label>
-                            <textarea rows="3" class="block-data-lang w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-lang="${l.code}" data-key="content">${(data.content && data.content[l.code]) || ''}</textarea>
+                            <textarea id="page-section-${id}-desc-${l.code}" rows="10" class="block-data-lang editor mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" data-lang="${l.code}" data-key="content">${(data.content && data.content[l.code]) || ''}</textarea>
                         </div>
                     `).join('');
                 } else if (type === 'inputs') {
@@ -281,6 +350,10 @@
                                 <input type="text" class="block-data-lang w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-lang="${l.code}" data-key="email_label" value="${(data.email_label && data.email_label[l.code]) || ''}">
                             </div>
                             <div class="mb-2">
+                                <label class="block text-xs text-gray-500 dark:text-gray-400">Content (${l.code})</label>
+                                <textarea id="page-section-${id}-form-content-${l.code}" rows="10" class="block-data-lang editor mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" data-lang="${l.code}" data-key="content">${(data.content && data.content[l.code]) || ''}</textarea>
+                            </div>
+                            <div class="mb-2">
                                 <label class="block text-xs text-gray-500 dark:text-gray-400">Content label (${l.code})</label>
                                 <input type="text" class="block-data-lang w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-lang="${l.code}" data-key="content_label" value="${(data.content_label && data.content_label[l.code]) || ''}">
                             </div>
@@ -300,6 +373,11 @@
             }
 
             function renderSections() {
+                if (typeof tinymce !== 'undefined') {
+                    document.querySelectorAll('#sections-list .editor').forEach(el => {
+                        if (el.id && tinymce.get(el.id)) tinymce.get(el.id).remove();
+                    });
+                }
                 const list = document.getElementById('sections-list');
                 list.innerHTML = '';
                 list.querySelectorAll('.section-item').forEach(el => el.remove());
@@ -340,6 +418,13 @@
                         const isHidden = editor.classList.toggle('hidden');
                         this.setAttribute('aria-expanded', !isHidden);
                         this.textContent = isHidden ? 'Edit' : 'Collapse';
+                        if (!isHidden && typeof tinymce !== 'undefined') {
+                            editor.querySelectorAll('.editor').forEach(ta => {
+                                if (ta.id && !tinymce.get(ta.id)) {
+                                    initSectionEditor(ta);
+                                }
+                            });
+                        }
                     };
                 });
                 document.querySelectorAll('.section-remove').forEach(btn => {
@@ -401,6 +486,7 @@
                 });
                 document.querySelectorAll('.block-data-lang').forEach(input => {
                     input.addEventListener('change', function() {
+                        if (this.classList.contains('editor') && typeof tinymce !== 'undefined' && tinymce.get(this.id)) return;
                         const sectionId = this.closest('.section-item').dataset.sectionId;
                         const section = sections.find(s => s.id === sectionId);
                         if (!section) return;
@@ -522,6 +608,7 @@
             };
 
             document.getElementById('page-form').onsubmit = function() {
+                if (typeof tinymce !== 'undefined') tinymce.triggerSave();
                 syncSectionsInput();
             };
 

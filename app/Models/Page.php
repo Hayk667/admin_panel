@@ -17,6 +17,7 @@ class Page extends Model
         'content',
         'sections',
         'is_active',
+        'menu_order',
     ];
 
     protected $casts = [
@@ -24,6 +25,7 @@ class Page extends Model
         'content' => 'array',
         'sections' => 'array',
         'is_active' => 'boolean',
+        'menu_order' => 'integer',
     ];
 
     /**

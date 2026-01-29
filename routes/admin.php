@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ImageUploadController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\MenuController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +39,10 @@ Route::middleware([
 
     // Pages CRUD
     Route::resource('pages', PageController::class)->except(['show']);
+
+    // Menu (reorder active pages)
+    Route::get('/menu', [MenuController::class, 'index'])->name('menu.index');
+    Route::post('/menu/reorder', [MenuController::class, 'reorder'])->name('menu.reorder');
 
     // Image Upload
     Route::post('/upload/image', [ImageUploadController::class, 'upload'])->name('upload.image');

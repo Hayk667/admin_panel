@@ -40,6 +40,10 @@
                         {{ __('Pages') }}
                     </x-nav-link>
 
+                    <x-nav-link href="{{ route('admin.menu.index') }}" :active="request()->routeIs('admin.menu.*')">
+                        {{ __('Menu') }}
+                    </x-nav-link>
+
                     <!-- Settings (sub-menu only, no URL) -->
                     <div class="relative inline-flex items-center -my-px" x-data="{ open: false }" @click.away="open = false">
                         <button type="button" @click="open = ! open" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition duration-150 ease-in-out">
@@ -229,6 +233,9 @@
 
             <x-responsive-nav-link href="{{ route('admin.pages.index') }}" :active="request()->routeIs('admin.pages.*')">
                 {{ __('Pages') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('admin.menu.index') }}" :active="request()->routeIs('admin.menu.*')">
+                {{ __('Menu') }}
             </x-responsive-nav-link>
 
             <!-- Settings sub-menu -->

@@ -17,7 +17,7 @@ class PageController extends Controller
      */
     public function index(): View
     {
-        $pages = Page::latest()->get();
+        $pages = Page::orderBy('menu_order')->orderBy('id')->get();
         return view('admin.pages.index', compact('pages'));
     }
 
@@ -55,6 +55,7 @@ class PageController extends Controller
         $data['slug'] = $slug;
 
         $data['is_active'] = (bool) ($data['is_active'] ?? true);
+        $data['menu_order'] = (int) (Page::max('menu_order') ?? 0) + 1;
 
         Page::create($data);
 

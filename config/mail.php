@@ -114,6 +114,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Contact Form Recipient
+    |--------------------------------------------------------------------------
+    |
+    | Email address that receives messages from the page "Send Email" block.
+    | Falls back to MAIL_FROM_ADDRESS when not set.
+    |
+    */
+
+    'contact_to' => env('MAIL_CONTACT_TO'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Markdown Mail Settings
     |--------------------------------------------------------------------------
     |
