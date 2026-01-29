@@ -12,26 +12,48 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+                    <x-nav-link href="{{ route('admin.dashboard') }}" :active="request()->routeIs('admin.dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('posts.index') }}" :active="request()->routeIs('posts.*')">
-                        {{ __('Posts') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('categories.index') }}" :active="request()->routeIs('categories.*')">
-                        {{ __('Categories') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('languages.index') }}" :active="request()->routeIs('languages.*')">
-                        {{ __('Languages') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('users.index') }}" :active="request()->routeIs('users.*')">
-                        {{ __('Users') }}
-                    </x-nav-link>
-                    @if (Auth::check() && Auth::user()->isAdmin())
-                        <x-nav-link href="{{ route('roles.index') }}" :active="request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('page-permissions.*')">
-                            {{ __('Roles & Permissions') }}
-                        </x-nav-link>
-                    @endif
+
+                    <!-- Posts (sub-menu only, no URL - like Settings) -->
+                    @php
+                        $postsActive = request()->routeIs('admin.posts.*') || request()->routeIs('admin.categories.*') || request()->routeIs('admin.tags.*');
+                    @endphp
+                    <div class="relative inline-flex items-center -my-px" x-data="{ open: false }" @click.away="open = false">
+                        <button type="button" @click="open = ! open" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ $postsActive ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }}">
+                            {{ __('Posts') }}
+                            <svg class="ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-transition @click="open = false"
+                            class="absolute z-50 top-full start-0 mt-0 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5"
+                            style="display: none;">
+                            <x-dropdown-link href="{{ route('admin.posts.index') }}">{{ __('Posts') }}</x-dropdown-link>
+                            <x-dropdown-link href="{{ route('admin.categories.index') }}">{{ __('Categories') }}</x-dropdown-link>
+                            <x-dropdown-link href="{{ route('admin.tags.index') }}">{{ __('Tags') }}</x-dropdown-link>
+                        </div>
+                    </div>
+
+                    <!-- Settings (sub-menu only, no URL) -->
+                    <div class="relative inline-flex items-center -my-px" x-data="{ open: false }" @click.away="open = false">
+                        <button type="button" @click="open = ! open" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                            {{ __('Settings') }}
+                            <svg class="ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-transition @click="open = false"
+                            class="absolute z-50 top-full start-0 mt-0 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5"
+                            style="display: none;">
+                            <x-dropdown-link href="{{ route('admin.languages.index') }}">{{ __('Languages') }}</x-dropdown-link>
+                            <x-dropdown-link href="{{ route('admin.users.index') }}">{{ __('Users') }}</x-dropdown-link>
+                            @if (Auth::check() && Auth::user()->isAdmin())
+                                <x-dropdown-link href="{{ route('admin.roles.index') }}">{{ __('Roles & Permissions') }}</x-dropdown-link>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -183,23 +205,36 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
+            <x-responsive-nav-link href="{{ route('admin.dashboard') }}" :active="request()->routeIs('admin.dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('posts.index') }}" :active="request()->routeIs('posts.*')">
+
+            <!-- Posts sub-menu -->
+            <div class="block px-4 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                {{ __('Posts') }}
+            </div>
+            <x-responsive-nav-link href="{{ route('admin.posts.index') }}" :active="request()->routeIs('admin.posts.*')">
                 {{ __('Posts') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('categories.index') }}" :active="request()->routeIs('categories.*')">
+            <x-responsive-nav-link href="{{ route('admin.categories.index') }}" :active="request()->routeIs('admin.categories.*')">
                 {{ __('Categories') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('languages.index') }}" :active="request()->routeIs('languages.*')">
+            <x-responsive-nav-link href="{{ route('admin.tags.index') }}" :active="request()->routeIs('admin.tags.*')">
+                {{ __('Tags') }}
+            </x-responsive-nav-link>
+
+            <!-- Settings sub-menu -->
+            <div class="block px-4 py-2 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider pt-3">
+                {{ __('Settings') }}
+            </div>
+            <x-responsive-nav-link href="{{ route('admin.languages.index') }}" :active="request()->routeIs('admin.languages.*')">
                 {{ __('Languages') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('users.index') }}" :active="request()->routeIs('users.*')">
+            <x-responsive-nav-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')">
                 {{ __('Users') }}
             </x-responsive-nav-link>
             @if (Auth::check() && Auth::user()->isAdmin())
-                <x-responsive-nav-link href="{{ route('roles.index') }}" :active="request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('page-permissions.*')">
+                <x-responsive-nav-link href="{{ route('admin.roles.index') }}" :active="request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') || request()->routeIs('admin.page-permissions.*')">
                     {{ __('Roles & Permissions') }}
                 </x-responsive-nav-link>
             @endif

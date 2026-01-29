@@ -28,6 +28,8 @@ class UpdatePostRequest extends FormRequest
         $rules = [
             'slug' => ['nullable', 'string', 'max:255', \Illuminate\Validation\Rule::unique('posts', 'slug')->ignore($postId)],
             'category_id' => ['nullable', 'exists:categories,id'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['exists:tags,id'],
             'published_at' => ['nullable', 'date'],
             'image' => ['nullable', 'mimes:jpeg,jpg,png,gif,webp', 'max:2048'],
             'is_active' => ['sometimes', 'boolean'],

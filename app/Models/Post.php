@@ -66,6 +66,14 @@ class Post extends Model
     }
 
     /**
+     * Get the tags for the post.
+     */
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'post_tag');
+    }
+
+    /**
      * Get title for specific language
      */
     public function getTitle($languageCode = null)

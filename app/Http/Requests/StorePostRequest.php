@@ -26,6 +26,8 @@ class StorePostRequest extends FormRequest
         $rules = [
             'slug' => ['nullable', 'string', 'max:255', 'unique:posts,slug'],
             'category_id' => ['nullable', 'exists:categories,id'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['exists:tags,id'],
             'published_at' => ['nullable', 'date'],
             'image' => ['nullable', 'mimes:jpeg,jpg,png,gif,webp', 'max:2048'],
             'is_active' => ['sometimes', 'boolean'],
