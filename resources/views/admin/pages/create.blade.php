@@ -588,7 +588,8 @@
                     });
                 });
                 document.querySelectorAll('.add-slider-slide').forEach(btn => {
-                    btn.onclick = function() {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
                         const sectionId = this.dataset.sectionId;
                         const section = sections.find(s => s.id === sectionId);
                         if (!section || section.type !== 'slider') return;
@@ -598,10 +599,18 @@
                         section.data.slides.push({ image: '', title: { ...langObj }, subtitle: { ...langObj } });
                         renderSections();
                         syncSectionsInput();
+                        var item = document.querySelector('.section-item[data-section-id="' + sectionId + '"]');
+                        if (item) {
+                            var editor = item.querySelector('.section-editor');
+                            var toggle = item.querySelector('.section-toggle');
+                            if (editor) editor.classList.remove('hidden');
+                            if (toggle) { toggle.setAttribute('aria-expanded', 'true'); toggle.textContent = 'Collapse'; }
+                        }
                     };
                 });
                 document.querySelectorAll('.remove-slider-slide').forEach(btn => {
-                    btn.onclick = function() {
+                    btn.onclick = function(e) {
+                        e.preventDefault();
                         const sectionItem = this.closest('.section-item');
                         const sectionId = sectionItem.dataset.sectionId;
                         const section = sections.find(s => s.id === sectionId);
@@ -616,6 +625,13 @@
                         }
                         renderSections();
                         syncSectionsInput();
+                        var item = document.querySelector('.section-item[data-section-id="' + sectionId + '"]');
+                        if (item) {
+                            var editor = item.querySelector('.section-editor');
+                            var toggle = item.querySelector('.section-toggle');
+                            if (editor) editor.classList.remove('hidden');
+                            if (toggle) { toggle.setAttribute('aria-expanded', 'true'); toggle.textContent = 'Collapse'; }
+                        }
                     };
                 });
                 document.querySelectorAll('.banner-image-upload').forEach(input => {

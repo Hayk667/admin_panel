@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let index = 0;
         function goTo(i) {
             index = ((i % count) + count) % count;
-            if (track) track.style.transform = 'translateX(-' + index + '00%)';
+            if (track) track.style.transform = 'translateX(-' + (index * 100 / count) + '%)';
             dots.forEach(function(d, j) {
                 d.classList.toggle('bg-white', j === index);
                 d.classList.toggle('bg-white/50', j !== index);
