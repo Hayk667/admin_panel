@@ -10,6 +10,7 @@ use App\Models\Language;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Services\ImageService;
+use App\Services\ContentImageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -217,6 +218,16 @@ class PostController extends Controller
 
         $tagIds = array_values(array_filter($data['tags'] ?? [], fn ($id) => $id !== '' && (int) $id > 0));
         unset($data['tags']);
+
+        // Delete content images that were removed or replaced in the editor
+        $oldContent = $post->content ?? [];
+        $newContent = $contentData;
+        if (is_array($oldContent) && is_array($newContent)) {
+            $oldPaths = ContentImageService::extractImagePathsFromPostContent($oldContent);
+            $newPaths = ContentImageService::extractImagePathsFromPostContent($newContent);
+            $orphaned = ContentImageService::orphanedPaths($oldPaths, $newPaths);
+            ContentImageService::deletePaths($orphaned);
+        }
 
         $post->update($data);
         $post->tags()->sync($tagIds);

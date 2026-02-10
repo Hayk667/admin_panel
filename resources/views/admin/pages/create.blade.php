@@ -23,6 +23,7 @@
                                 <select id="add-block-type" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
                                     <option value="">{{ __('Add block…') }}</option>
                                     <option value="banner">{{ __('Banner') }}</option>
+                                    <option value="slider">{{ __('Slider') }}</option>
                                     <option value="title">{{ __('Title') }}</option>
                                     <option value="description">{{ __('Description') }}</option>
                                     <option value="inputs">{{ __('Inputs (Text, Email, Phone)') }}</option>
@@ -79,6 +80,7 @@
 
             const sectionLabels = {
                 banner: '{{ __("Banner") }}',
+                slider: '{{ __("Slider") }}',
                 title: '{{ __("Title") }}',
                 description: '{{ __("Description") }}',
                 inputs: '{{ __("Inputs") }}',
@@ -104,6 +106,11 @@
                         data.image = '';
                         data.title = { ...langObj };
                         data.subtitle = { ...langObj };
+                        data.full_width = false;
+                        break;
+                    case 'slider':
+                        data.slides = [{ image: '', title: { ...langObj }, subtitle: { ...langObj } }];
+                        data.full_width = false;
                         break;
                     case 'title':
                         data.title = { ...langObj };
@@ -269,6 +276,10 @@
                             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Or image URL</label>
                             <input type="text" class="block-data-input w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="image" value="${(data.image || '')}" placeholder="https://...">
                         </div>
+                        <label class="flex items-center gap-2 mb-3">
+                            <input type="checkbox" class="block-data-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600" data-key="full_width" ${data.full_width ? 'checked' : ''}>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ __('Full width') }}</span>
+                        </label>
                         ${languages.map(l => `
                             <div class="mb-2">
                                 <label class="block text-xs text-gray-500 dark:text-gray-400">Title (${l.code})</label>
@@ -279,6 +290,49 @@
                                 <input type="text" class="block-data-lang w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-lang="${l.code}" data-key="subtitle" value="${(data.subtitle && data.subtitle[l.code]) || ''}">
                             </div>
                         `).join('')}
+                    `;
+                } else if (type === 'slider') {
+                    const slides = data.slides || [{ image: '', title: {}, subtitle: {} }];
+                    inner = `
+                        <label class="flex items-center gap-2 mb-3">
+                            <input type="checkbox" class="block-data-checkbox rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600" data-key="full_width" ${data.full_width ? 'checked' : ''}>
+                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ __('Full width') }}</span>
+                        </label>
+                        <div class="slider-slides-list space-y-3" data-section-id="${id}">
+                            ${slides.map((slide, slideIdx) => {
+                                const hasImage = slide.image && (String(slide.image).startsWith('http') || String(slide.image).startsWith('/'));
+                                return `
+                                    <div class="slider-slide border border-gray-200 dark:border-gray-600 rounded p-3" data-slide-index="${slideIdx}">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Slide ${slideIdx + 1}</span>
+                                            <button type="button" class="remove-slider-slide text-red-600 hover:text-red-800 text-xs">Remove</button>
+                                        </div>
+                                        <div class="slider-image-preview mb-2 ${!hasImage ? 'hidden' : ''}">
+                                            <img src="${hasImage ? String(slide.image).replace(/"/g, '&quot;') : ''}" alt="" class="slider-preview-img max-h-20 rounded border border-gray-300 dark:border-gray-600" ${!hasImage ? 'style="display:none"' : ''}>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Upload image</label>
+                                            <input type="file" class="slider-image-upload w-full text-sm text-gray-500 dark:text-gray-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 dark:file:bg-indigo-900/30 dark:file:text-indigo-300" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp" data-slide-index="${slideIdx}">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Or image URL</label>
+                                            <input type="text" class="slider-slide-image-input block w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-slide-index="${slideIdx}" value="${(slide.image || '')}" placeholder="https://... or /storage/...">
+                                        </div>
+                                        ${languages.map(l => `
+                                            <div class="mb-2">
+                                                <label class="block text-xs text-gray-500 dark:text-gray-400">Title (${l.code})</label>
+                                                <input type="text" class="slider-slide-lang w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-lang="${l.code}" data-slide-index="${slideIdx}" data-field="title" value="${(slide.title && slide.title[l.code]) || ''}">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="block text-xs text-gray-500 dark:text-gray-400">Subtitle (${l.code})</label>
+                                                <input type="text" class="slider-slide-lang w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-lang="${l.code}" data-slide-index="${slideIdx}" data-field="subtitle" value="${(slide.subtitle && slide.subtitle[l.code]) || ''}">
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        <button type="button" class="add-slider-slide mt-2 text-sm text-indigo-600 dark:text-indigo-400 hover:underline" data-section-id="${id}">+ Add slide</button>
                     `;
                 } else if (type === 'title') {
                     inner = languages.map(l => `
@@ -436,6 +490,16 @@
                     };
                 });
 
+                document.querySelectorAll('.block-data-checkbox').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const sectionId = this.closest('.section-item').dataset.sectionId;
+                        const section = sections.find(s => s.id === sectionId);
+                        if (!section) return;
+                        const key = this.dataset.key;
+                        section.data[key] = this.checked;
+                        syncSectionsInput();
+                    });
+                });
                 document.querySelectorAll('.block-data-input').forEach(input => {
                     input.addEventListener('change', function() {
                         const sectionId = this.closest('.section-item').dataset.sectionId;
@@ -456,6 +520,103 @@
                             }
                         }
                     });
+                });
+                document.querySelectorAll('.slider-slide-image-input').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const sectionId = this.closest('.section-item').dataset.sectionId;
+                        const section = sections.find(s => s.id === sectionId);
+                        if (!section || section.type !== 'slider') return;
+                        const slideIdx = parseInt(this.dataset.slideIndex, 10);
+                        if (!section.data.slides) section.data.slides = [];
+                        if (!section.data.slides[slideIdx]) return;
+                        section.data.slides[slideIdx].image = this.value;
+                        const preview = this.closest('.slider-slide').querySelector('.slider-image-preview');
+                        const img = preview && preview.querySelector('.slider-preview-img');
+                        if (this.value && (this.value.startsWith('http') || this.value.startsWith('/'))) {
+                            if (preview) preview.classList.remove('hidden');
+                            if (img) { img.src = this.value; img.style.display = ''; }
+                        } else {
+                            if (preview) preview.classList.add('hidden');
+                            if (img) img.style.display = 'none';
+                        }
+                        syncSectionsInput();
+                    });
+                });
+                document.querySelectorAll('.slider-slide-lang').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const sectionId = this.closest('.section-item').dataset.sectionId;
+                        const section = sections.find(s => s.id === sectionId);
+                        if (!section || section.type !== 'slider') return;
+                        const slideIdx = parseInt(this.dataset.slideIndex, 10);
+                        const field = this.dataset.field;
+                        const lang = this.dataset.lang;
+                        if (!section.data.slides || !section.data.slides[slideIdx]) return;
+                        if (!section.data.slides[slideIdx][field]) section.data.slides[slideIdx][field] = {};
+                        section.data.slides[slideIdx][field][lang] = this.value;
+                        syncSectionsInput();
+                    });
+                });
+                document.querySelectorAll('.slider-image-upload').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const file = this.files[0];
+                        if (!file) return;
+                        const sectionItem = this.closest('.section-item');
+                        const sectionId = sectionItem.dataset.sectionId;
+                        const section = sections.find(s => s.id === sectionId);
+                        if (!section || section.type !== 'slider') return;
+                        const slideIdx = parseInt(this.dataset.slideIndex, 10);
+                        if (!section.data.slides || !section.data.slides[slideIdx]) return;
+                        const formData = new FormData();
+                        formData.append('image', file);
+                        formData.append('_token', document.querySelector('input[name="_token"]').value);
+                        const urlInput = sectionItem.querySelector('.slider-slide-image-input[data-slide-index="' + slideIdx + '"]');
+                        const preview = sectionItem.querySelector('.slider-slide[data-slide-index="' + slideIdx + '"] .slider-image-preview');
+                        const img = preview && preview.querySelector('.slider-preview-img');
+                        fetch('{{ route("admin.upload.image") }}', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.location) {
+                                    section.data.slides[slideIdx].image = data.location;
+                                    if (urlInput) urlInput.value = data.location;
+                                    if (preview) preview.classList.remove('hidden');
+                                    if (img) { img.src = data.location; img.style.display = ''; }
+                                    syncSectionsInput();
+                                }
+                            })
+                            .catch(() => {});
+                        this.value = '';
+                    });
+                });
+                document.querySelectorAll('.add-slider-slide').forEach(btn => {
+                    btn.onclick = function() {
+                        const sectionId = this.dataset.sectionId;
+                        const section = sections.find(s => s.id === sectionId);
+                        if (!section || section.type !== 'slider') return;
+                        const langObj = {};
+                        languages.forEach(l => { langObj[l.code] = ''; });
+                        if (!section.data.slides) section.data.slides = [];
+                        section.data.slides.push({ image: '', title: { ...langObj }, subtitle: { ...langObj } });
+                        renderSections();
+                        syncSectionsInput();
+                    };
+                });
+                document.querySelectorAll('.remove-slider-slide').forEach(btn => {
+                    btn.onclick = function() {
+                        const sectionItem = this.closest('.section-item');
+                        const sectionId = sectionItem.dataset.sectionId;
+                        const section = sections.find(s => s.id === sectionId);
+                        if (!section || section.type !== 'slider') return;
+                        const slide = this.closest('.slider-slide');
+                        const slideIdx = parseInt(slide.dataset.slideIndex, 10);
+                        section.data.slides.splice(slideIdx, 1);
+                        if (section.data.slides.length === 0) {
+                            const langObj = {};
+                            languages.forEach(l => { langObj[l.code] = ''; });
+                            section.data.slides.push({ image: '', title: { ...langObj }, subtitle: { ...langObj } });
+                        }
+                        renderSections();
+                        syncSectionsInput();
+                    };
                 });
                 document.querySelectorAll('.banner-image-upload').forEach(input => {
                     input.addEventListener('change', function() {

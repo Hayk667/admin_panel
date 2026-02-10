@@ -35,9 +35,30 @@
                                 </a>
                                 @isset($menuPages)
                                     @foreach ($menuPages as $menuPage)
-                                        <a href="{{ route('page.show', $menuPage->slug) }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('page.show') && request()->route('slug') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }}">
-                                            {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
-                                        </a>
+                                        @if ($menuPage->children->isNotEmpty())
+                                            <div class="relative group">
+                                                <button type="button" class="px-3 py-2 rounded-md text-sm font-medium inline-flex items-center gap-0.5 {{ request()->routeIs('page.show') && in_array(request()->route('slug'), $menuPage->children->pluck('slug')->push($menuPage->slug)->toArray()) ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }}">
+                                                    {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
+                                                    <svg class="w-4 h-4 ml-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                                </button>
+                                                <div class="absolute left-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                                                    <div class="py-1 bg-white dark:bg-gray-700 rounded-md shadow-lg border border-gray-200 dark:border-gray-600 min-w-[10rem]">
+                                                        <a href="{{ route('page.show', $menuPage->slug) }}" class="block px-4 py-2 text-sm {{ (request()->route('slug') ?? '') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600' }}">
+                                                            {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
+                                                        </a>
+                                                        @foreach ($menuPage->children as $child)
+                                                            <a href="{{ route('page.show', $child->slug) }}" class="block px-4 py-2 text-sm {{ (request()->route('slug') ?? '') === $child->slug ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600' }}">
+                                                                {{ $child->getTitle($langCode ?? null) ?: $child->slug }}
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <a href="{{ route('page.show', $menuPage->slug) }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('page.show') && request()->route('slug') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }}">
+                                                {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
+                                            </a>
+                                        @endif
                                     @endforeach
                                 @endisset
                             </nav>
@@ -69,9 +90,24 @@
                             </a>
                             @isset($menuPages)
                                 @foreach ($menuPages as $menuPage)
-                                    <a href="{{ route('page.show', $menuPage->slug) }}" class="px-3 py-1.5 rounded text-sm font-medium {{ request()->routeIs('page.show') && request()->route('slug') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
-                                        {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
-                                    </a>
+                                    @if ($menuPage->children->isNotEmpty())
+                                        <div class="w-full">
+                                            <a href="{{ route('page.show', $menuPage->slug) }}" class="block px-3 py-1.5 rounded text-sm font-medium {{ (request()->route('slug') ?? '') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                                                {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
+                                            </a>
+                                            <div class="ml-3 mt-0.5 space-y-0.5">
+                                                @foreach ($menuPage->children as $child)
+                                                    <a href="{{ route('page.show', $child->slug) }}" class="block px-3 py-1 rounded text-sm {{ (request()->route('slug') ?? '') === $child->slug ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                                                        {{ $child->getTitle($langCode ?? null) ?: $child->slug }}
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @else
+                                        <a href="{{ route('page.show', $menuPage->slug) }}" class="px-3 py-1.5 rounded text-sm font-medium {{ request()->routeIs('page.show') && request()->route('slug') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                                            {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
+                                        </a>
+                                    @endif
                                 @endforeach
                             @endisset
                         </div>

@@ -24,8 +24,12 @@ class AppServiceProvider extends ServiceProvider
     {
         View::composer('layouts.frontend', function ($view) {
             $menuPages = Page::where('is_active', true)
+                ->topLevel()
                 ->orderBy('menu_order')
                 ->orderBy('id')
+                ->with(['children' => function ($q) {
+                    $q->where('is_active', true)->orderBy('menu_order')->orderBy('id');
+                }])
                 ->get();
             $defaultLang = Language::getDefault();
             $langCode = $defaultLang ? $defaultLang->code : 'en';

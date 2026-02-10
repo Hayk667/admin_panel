@@ -7,6 +7,7 @@ use App\Models\Page;
 use App\Models\Language;
 use App\Http\Requests\StorePageRequest;
 use App\Http\Requests\UpdatePageRequest;
+use App\Services\ContentImageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -97,6 +98,16 @@ class PageController extends Controller
         $data['slug'] = $slug;
 
         $data['is_active'] = (bool) ($data['is_active'] ?? true);
+
+        // Delete images that were in old sections but are no longer in new sections (changed/removed)
+        $oldSections = $page->sections ?? [];
+        $newSections = $data['sections'] ?? [];
+        if (is_array($oldSections) && is_array($newSections)) {
+            $oldPaths = ContentImageService::extractImagePathsFromPageSections($oldSections);
+            $newPaths = ContentImageService::extractImagePathsFromPageSections($newSections);
+            $orphaned = ContentImageService::orphanedPaths($oldPaths, $newPaths);
+            ContentImageService::deletePaths($orphaned);
+        }
 
         $page->update($data);
 

@@ -43,7 +43,7 @@ class UpdatePageRequest extends FormRequest
                 },
             ],
             'sections.*.id' => ['required', 'string', 'max:64'],
-            'sections.*.type' => ['required', 'string', 'in:banner,title,description,inputs,send_email_form'],
+            'sections.*.type' => ['required', 'string', 'in:banner,slider,title,description,inputs,send_email_form'],
             'sections.*.data' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ];

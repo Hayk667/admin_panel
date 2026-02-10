@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Services\ContentImageService;
 
 class Post extends Model
 {
@@ -115,6 +116,12 @@ class Post extends Model
             }
             if ($post->thumbnail && Storage::disk('public')->exists($post->thumbnail)) {
                 Storage::disk('public')->delete($post->thumbnail);
+            }
+            // Delete images embedded in content (TinyMCE uploads)
+            $content = $post->content;
+            if (is_array($content)) {
+                $paths = ContentImageService::extractImagePathsFromPostContent($content);
+                ContentImageService::deletePaths($paths);
             }
         });
     }

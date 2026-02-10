@@ -11,4 +11,10 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    server: {
+        cors: {
+            origin: ['https://admin.loc', 'http://admin.loc'],
+            credentials: true,
+        },
+    },
 });
