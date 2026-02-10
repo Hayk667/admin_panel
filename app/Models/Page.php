@@ -83,13 +83,14 @@ class Page extends Model
     }
 
     /**
-     * Delete section images from storage when page is deleted.
+     * Delete section images from storage only when page is force (permanently) deleted.
+     * Soft delete keeps images so the page can be restored.
      */
     protected static function boot()
     {
         parent::boot();
 
-        static::deleting(function (Page $page) {
+        static::forceDeleting(function (Page $page) {
             $sections = $page->sections;
             if (is_array($sections)) {
                 $paths = ContentImageService::extractImagePathsFromPageSections($sections);

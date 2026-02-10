@@ -104,13 +104,14 @@ class Post extends Model
     }
 
     /**
-     * Delete image and thumbnail when post is deleted
+     * Delete image, thumbnail and content images only when post is force (permanently) deleted.
+     * Soft delete keeps images so the post can be restored.
      */
     protected static function boot()
     {
         parent::boot();
 
-        static::deleting(function ($post) {
+        static::forceDeleting(function ($post) {
             if ($post->image && Storage::disk('public')->exists($post->image)) {
                 Storage::disk('public')->delete($post->image);
             }

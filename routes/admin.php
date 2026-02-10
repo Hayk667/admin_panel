@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RolePermissionController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\MenuController;
+use App\Http\Controllers\Admin\DeletedContentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +49,12 @@ Route::middleware([
     Route::post('/upload/image', [ImageUploadController::class, 'upload'])->name('upload.image');
     Route::post('/upload/cleanup', [ImageUploadController::class, 'cleanup'])->name('upload.cleanup');
     Route::post('/upload/clear-tracking', [ImageUploadController::class, 'clearTracking'])->name('upload.clear-tracking');
+
+    // Users (read-only with edit)
+    // Deleted content (soft-deleted items: restore / force delete)
+    Route::get('deleted-content', [DeletedContentController::class, 'index'])->name('deleted-content.index');
+    Route::post('deleted-content/{type}/{id}/restore', [DeletedContentController::class, 'restore'])->name('deleted-content.restore');
+    Route::delete('deleted-content/{type}/{id}', [DeletedContentController::class, 'forceDelete'])->name('deleted-content.force-delete');
 
     // Users (read-only with edit)
     Route::get('users', [UserController::class, 'index'])->name('users.index');

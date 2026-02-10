@@ -45,8 +45,11 @@
                     </x-nav-link>
 
                     <!-- Settings (sub-menu only, no URL) -->
+                    @php
+                        $settingsActive = request()->routeIs('admin.languages.*') || request()->routeIs('admin.users.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') || request()->routeIs('admin.page-permissions.*') || request()->routeIs('admin.deleted-content.*');
+                    @endphp
                     <div class="relative inline-flex items-center -my-px" x-data="{ open: false }" @click.away="open = false">
-                        <button type="button" @click="open = ! open" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 focus:outline-none transition duration-150 ease-in-out">
+                        <button type="button" @click="open = ! open" class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 focus:outline-none transition duration-150 ease-in-out {{ $settingsActive ? 'border-indigo-400 dark:border-indigo-600 text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700' }}">
                             {{ __('Settings') }}
                             <svg class="ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -57,6 +60,7 @@
                             style="display: none;">
                             <x-dropdown-link href="{{ route('admin.languages.index') }}">{{ __('Languages') }}</x-dropdown-link>
                             <x-dropdown-link href="{{ route('admin.users.index') }}">{{ __('Users') }}</x-dropdown-link>
+                            <x-dropdown-link href="{{ route('admin.deleted-content.index') }}">{{ __('Deleted content') }}</x-dropdown-link>
                             @if (Auth::check() && Auth::user()->isAdmin())
                                 <x-dropdown-link href="{{ route('admin.roles.index') }}">{{ __('Roles & Permissions') }}</x-dropdown-link>
                             @endif
@@ -247,6 +251,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('admin.users.index') }}" :active="request()->routeIs('admin.users.*')">
                 {{ __('Users') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('admin.deleted-content.index') }}" :active="request()->routeIs('admin.deleted-content.*')">
+                {{ __('Deleted content') }}
             </x-responsive-nav-link>
             @if (Auth::check() && Auth::user()->isAdmin())
                 <x-responsive-nav-link href="{{ route('admin.roles.index') }}" :active="request()->routeIs('admin.roles.*') || request()->routeIs('admin.permissions.*') || request()->routeIs('admin.page-permissions.*')">

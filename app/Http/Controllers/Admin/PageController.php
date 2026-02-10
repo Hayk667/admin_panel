@@ -116,7 +116,8 @@ class PageController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage (soft delete).
+     * Images are kept on soft delete and only removed when the page is force-deleted.
      */
     public function destroy(Page $page): RedirectResponse
     {

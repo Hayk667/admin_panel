@@ -4,8 +4,10 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
@@ -16,6 +18,7 @@ class User extends Authenticatable
     use HasFactory;
     use HasProfilePhoto;
     use Notifiable;
+    use SoftDeletes;
     use TwoFactorAuthenticatable;
 
     /**
@@ -59,6 +62,21 @@ class User extends Authenticatable
     protected $appends = [
         'profile_photo_url',
     ];
+
+    /**
+     * Delete profile photo from storage when user is permanently (force) deleted.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::forceDeleting(function (User $user) {
+            if ($user->profile_photo_path) {
+                $disk = method_exists($user, 'profilePhotoDisk') ? $user->profilePhotoDisk() : 'public';
+                Storage::disk($disk)->delete($user->profile_photo_path);
+            }
+        });
+    }
 
     /**
      * Get the role that belongs to the user
