@@ -93,6 +93,20 @@ class Post extends Model
     }
 
     /**
+     * Scope: search in title and content across all languages (JSON columns).
+     */
+    public function scopeSearch($query, string $term)
+    {
+        if ($term === '') {
+            return $query;
+        }
+        $like = '%' . addcslashes($term, '%_\\') . '%';
+        return $query->where(function ($q) use ($like) {
+            $q->where('title', 'like', $like)->orWhere('content', 'like', $like);
+        });
+    }
+
+    /**
      * Generate slug from title
      */
     public static function generateSlug($title, $languageCode = 'en')

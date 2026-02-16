@@ -128,7 +128,7 @@
                 </section>
             @elseif ($type === 'description')
                 <section class="px-6 sm:px-8 py-6 border-b border-gray-100 dark:border-gray-700">
-                    <div class="prose dark:prose-invert max-w-none">
+                    <div class="prose dark:prose-invert max-w-none break-words min-w-0">
                         {!! html_entity_decode((string) ($data['content'][$langCode] ?? $data['content']['en'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}
                     </div>
                 </section>
@@ -168,7 +168,7 @@
                             <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">{{ $formTitle }}</h2>
                         @endif
                         @if ($formContent)
-                            <div class="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            <div class="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-400 mb-4 break-words min-w-0">
                                 {!! html_entity_decode((string) $formContent, ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}
                             </div>
                         @endif

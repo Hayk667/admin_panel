@@ -19,16 +19,25 @@
             }
         </style>
     </head>
-    <body class="antialiased bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <body class="antialiased bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-x-hidden">
         <div class="min-h-screen flex flex-col">
             {{-- Header with menu --}}
             <header class="bg-white dark:bg-gray-800 shadow border-b border-gray-200 dark:border-gray-700">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between items-center h-16">
-                        <div class="flex items-center gap-8">
+                        <div class="flex items-center gap-4 sm:gap-8">
                             <a href="{{ route('home') }}" class="flex items-center shrink-0 font-semibold text-gray-800 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition">
                                 <x-application-mark class="block h-9 w-auto" />
                             </a>
+                            {{-- Burger button (mobile only) --}}
+                            <button type="button" id="burger-btn" class="sm:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-expanded="false" aria-controls="mobile-menu" aria-label="{{ __('Open menu') }}">
+                                <svg id="burger-icon" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                                </svg>
+                                <svg id="burger-close-icon" class="w-6 h-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                             <nav class="hidden sm:flex items-center gap-1">
                                 <a href="{{ route('home') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('home') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-white' }}">
                                     {{ __('Home') }}
@@ -63,53 +72,95 @@
                                 @endisset
                             </nav>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 max-sm:min-w-0">
+                            <form action="{{ route('search') }}" method="get" class="hidden sm:flex items-center gap-1">
+                                <label for="search-q" class="sr-only">{{ __('Search posts') }}</label>
+                                <input type="search" name="q" id="search-q" value="{{ request('q') }}"
+                                    placeholder="{{ __('Search posts…') }}"
+                                    class="w-36 sm:w-44 px-2 py-1.5 rounded-md text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                <button type="submit" class="p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200" aria-label="{{ __('Search') }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                                    </svg>
+                                </button>
+                            </form>
                             @if (Route::has('login'))
-                                @auth
-                                    <a href="{{ url('/admin/dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">
-                                        {{ __('Dashboard') }}
-                                    </a>
-                                @else
-                                    <a href="{{ route('login') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">
-                                        {{ __('Log in') }}
-                                    </a>
-                                    @if (Route::has('register'))
-                                        <a href="{{ route('register') }}" class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700">
-                                            {{ __('Register') }}
+                                <div class="hidden sm:flex items-center gap-2">
+                                    @auth
+                                        <a href="{{ url('/admin/dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">
+                                            {{ __('Dashboard') }}
                                         </a>
-                                    @endif
-                                @endauth
+                                    @else
+                                        <a href="{{ route('login') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white">
+                                            {{ __('Log in') }}
+                                        </a>
+                                        @if (Route::has('register'))
+                                            <a href="{{ route('register') }}" class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700">
+                                                {{ __('Register') }}
+                                            </a>
+                                        @endif
+                                    @endauth
+                                </div>
                             @endif
                         </div>
                     </div>
-                    {{-- Mobile menu --}}
-                    <div class="sm:hidden pb-3">
-                        <div class="flex flex-wrap gap-1">
-                            <a href="{{ route('home') }}" class="px-3 py-1.5 rounded text-sm font-medium {{ request()->routeIs('home') ? 'bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
-                                {{ __('Home') }}
-                            </a>
-                            @isset($menuPages)
-                                @foreach ($menuPages as $menuPage)
-                                    @if ($menuPage->children->isNotEmpty())
-                                        <div class="w-full">
-                                            <a href="{{ route('page.show', $menuPage->slug) }}" class="block px-3 py-1.5 rounded text-sm font-medium {{ (request()->route('slug') ?? '') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                    {{-- Mobile menu (burger panel) --}}
+                    <div id="mobile-menu" class="sm:hidden hidden border-t border-gray-200 dark:border-gray-700" aria-hidden="true">
+                        <div class="py-3 space-y-3">
+                            <form action="{{ route('search') }}" method="get" class="flex gap-1">
+                                <label for="search-q-mobile" class="sr-only">{{ __('Search posts') }}</label>
+                                <input type="search" name="q" id="search-q-mobile" value="{{ request('q') }}"
+                                    placeholder="{{ __('Search posts…') }}"
+                                    class="flex-1 min-w-0 px-2 py-1.5 rounded-md text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                <button type="submit" class="px-3 py-1.5 rounded-md text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                    {{ __('Search') }}
+                                </button>
+                            </form>
+                            <nav class="flex flex-col gap-0.5">
+                                <a href="{{ route('home') }}" class="px-3 py-2.5 rounded-md text-sm font-medium {{ request()->routeIs('home') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                                    {{ __('Home') }}
+                                </a>
+                                @isset($menuPages)
+                                    @foreach ($menuPages as $menuPage)
+                                        @if ($menuPage->children->isNotEmpty())
+                                            <div class="mt-1">
+                                                <a href="{{ route('page.show', $menuPage->slug) }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ (request()->route('slug') ?? '') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
+                                                    {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
+                                                </a>
+                                                <div class="ml-3 mt-0.5 space-y-0.5 border-l-2 border-gray-200 dark:border-gray-600 pl-3">
+                                                    @foreach ($menuPage->children as $child)
+                                                        <a href="{{ route('page.show', $child->slug) }}" class="block py-1.5 text-sm {{ (request()->route('slug') ?? '') === $child->slug ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300' }}">
+                                                            {{ $child->getTitle($langCode ?? null) ?: $child->slug }}
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @else
+                                            <a href="{{ route('page.show', $menuPage->slug) }}" class="block px-3 py-2.5 rounded-md text-sm font-medium {{ request()->routeIs('page.show') && request()->route('slug') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
                                                 {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
                                             </a>
-                                            <div class="ml-3 mt-0.5 space-y-0.5">
-                                                @foreach ($menuPage->children as $child)
-                                                    <a href="{{ route('page.show', $child->slug) }}" class="block px-3 py-1 rounded text-sm {{ (request()->route('slug') ?? '') === $child->slug ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
-                                                        {{ $child->getTitle($langCode ?? null) ?: $child->slug }}
-                                                    </a>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @else
-                                        <a href="{{ route('page.show', $menuPage->slug) }}" class="px-3 py-1.5 rounded text-sm font-medium {{ request()->routeIs('page.show') && request()->route('slug') === $menuPage->slug ? 'bg-gray-100 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
-                                            {{ $menuPage->getTitle($langCode ?? null) ?: $menuPage->slug }}
-                                        </a>
-                                    @endif
-                                @endforeach
-                            @endisset
+                                        @endif
+                                    @endforeach
+                                @endisset
+                                @if (Route::has('login'))
+                                    <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                        @auth
+                                            <a href="{{ url('/admin/dashboard') }}" class="block px-3 py-2.5 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                {{ __('Dashboard') }}
+                                            </a>
+                                        @else
+                                            <a href="{{ route('login') }}" class="block px-3 py-2.5 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                {{ __('Log in') }}
+                                            </a>
+                                            @if (Route::has('register'))
+                                                <a href="{{ route('register') }}" class="block px-3 py-2.5 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 mt-1">
+                                                    {{ __('Register') }}
+                                                </a>
+                                            @endif
+                                        @endauth
+                                    </div>
+                                @endif
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -121,5 +172,33 @@
         </div>
 
         @stack('scripts')
+        <script>
+            (function() {
+                var btn = document.getElementById('burger-btn');
+                var panel = document.getElementById('mobile-menu');
+                var iconOpen = document.getElementById('burger-icon');
+                var iconClose = document.getElementById('burger-close-icon');
+                if (!btn || !panel) return;
+                function open() {
+                    panel.classList.remove('hidden');
+                    panel.setAttribute('aria-hidden', 'false');
+                    btn.setAttribute('aria-expanded', 'true');
+                    btn.setAttribute('aria-label', '{{ __("Close menu") }}');
+                    iconOpen.classList.add('hidden');
+                    iconClose.classList.remove('hidden');
+                }
+                function close() {
+                    panel.classList.add('hidden');
+                    panel.setAttribute('aria-hidden', 'true');
+                    btn.setAttribute('aria-expanded', 'false');
+                    btn.setAttribute('aria-label', '{{ __("Open menu") }}');
+                    iconOpen.classList.remove('hidden');
+                    iconClose.classList.add('hidden');
+                }
+                btn.addEventListener('click', function() {
+                    if (panel.classList.contains('hidden')) open(); else close();
+                });
+            })();
+        </script>
     </body>
 </html>

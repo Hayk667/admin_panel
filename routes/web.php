@@ -11,6 +11,7 @@ use App\Http\Controllers\Frontend\PageController;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/search', [HomeController::class, 'search'])->name('search');
 Route::get('/page/{slug}', [PageController::class, 'show'])->name('page.show');
 Route::post('/page/{slug}/send-message', [PageController::class, 'sendMessage'])->name('page.send-message');
 Route::get('/post/{slug}', [HomeController::class, 'show'])->name('post.show');

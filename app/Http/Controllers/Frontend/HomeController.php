@@ -17,6 +17,37 @@ use Illuminate\Database\QueryException;
 class HomeController extends Controller
 {
     /**
+     * Search posts by title and content (all languages).
+     */
+    public function search(Request $request): View
+    {
+        $defaultLang = Language::getDefault();
+        $langCode = $defaultLang ? $defaultLang->code : 'en';
+
+        $term = $request->input('q', '');
+        $term = is_string($term) ? trim($term) : '';
+
+        $query = Post::where('is_active', true)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+
+        if ($term !== '') {
+            $query->search($term);
+        } else {
+            $query->whereRaw('0 = 1'); // empty search = no results
+        }
+
+        $posts = $query->with(['category', 'tags'])
+            ->orderBy('published_at', 'desc')
+            ->paginate(8)
+            ->withQueryString();
+
+        $tags = Tag::withCount('posts')->orderBy('name')->get();
+
+        return view('frontend.search', compact('posts', 'langCode', 'tags', 'term'));
+    }
+
+    /**
      * Display the home page with posts.
      */
     public function index(): View
