@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tag;
-use Illuminate\Http\Request;
+use App\Models\Language;
+use App\Http\Requests\StoreTagRequest;
+use App\Http\Requests\UpdateTagRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
-use Illuminate\Validation\Rule;
 
 class TagController extends Controller
 {
@@ -16,7 +17,7 @@ class TagController extends Controller
      */
     public function index(): View
     {
-        $tags = Tag::withCount('posts')->orderBy('name')->get();
+        $tags = Tag::withCount('posts')->latest()->get();
         return view('admin.tags.index', compact('tags'));
     }
 
@@ -25,30 +26,44 @@ class TagController extends Controller
      */
     public function create(): View
     {
-        return view('admin.tags.create');
+        $languages = Language::where('is_active', true)->get();
+        return view('admin.tags.create', compact('languages'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreTagRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:tags,slug'],
-        ]);
+        $data = $request->validated();
 
-        if (empty($validated['slug'])) {
-            $validated['slug'] = Tag::generateSlug($validated['name']);
-            $baseSlug = $validated['slug'];
-            $counter = 1;
-            while (Tag::where('slug', $validated['slug'])->exists()) {
-                $validated['slug'] = $baseSlug . '_' . $counter;
-                $counter++;
-            }
+        $nameData = [];
+        foreach ($data['name'] as $code => $name) {
+            $nameData[$code] = $name;
+        }
+        $data['name'] = $nameData;
+
+        if (!isset($data['is_active'])) {
+            $data['is_active'] = false;
+        } else {
+            $data['is_active'] = (bool) $data['is_active'];
         }
 
-        Tag::create($validated);
+        if (empty($data['slug'])) {
+            $defaultLang = Language::getDefault();
+            $langCode = $defaultLang ? $defaultLang->code : 'en';
+            $baseSlug = Tag::generateSlug($nameData, $langCode);
+
+            $slug = $baseSlug;
+            $counter = 1;
+            while (Tag::where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '_' . $counter;
+                $counter++;
+            }
+            $data['slug'] = $slug;
+        }
+
+        Tag::create($data);
 
         return redirect()->route('admin.tags.index')
             ->with('success', 'Tag created successfully.');
@@ -59,30 +74,44 @@ class TagController extends Controller
      */
     public function edit(Tag $tag): View
     {
-        return view('admin.tags.edit', compact('tag'));
+        $languages = Language::where('is_active', true)->get();
+        return view('admin.tags.edit', compact('tag', 'languages'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Tag $tag): RedirectResponse
+    public function update(UpdateTagRequest $request, Tag $tag): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('tags', 'slug')->ignore($tag->id)],
-        ]);
+        $data = $request->validated();
 
-        if (empty($validated['slug'])) {
-            $validated['slug'] = Tag::generateSlug($validated['name']);
-            $baseSlug = $validated['slug'];
-            $counter = 1;
-            while (Tag::where('slug', $validated['slug'])->where('id', '!=', $tag->id)->exists()) {
-                $validated['slug'] = $baseSlug . '_' . $counter;
-                $counter++;
-            }
+        $nameData = [];
+        foreach ($data['name'] as $code => $name) {
+            $nameData[$code] = $name;
+        }
+        $data['name'] = $nameData;
+
+        if (!isset($data['is_active'])) {
+            $data['is_active'] = false;
+        } else {
+            $data['is_active'] = (bool) $data['is_active'];
         }
 
-        $tag->update($validated);
+        if (empty($data['slug'])) {
+            $defaultLang = Language::getDefault();
+            $langCode = $defaultLang ? $defaultLang->code : 'en';
+            $baseSlug = Tag::generateSlug($nameData, $langCode);
+
+            $slug = $baseSlug;
+            $counter = 1;
+            while (Tag::where('slug', $slug)->where('id', '!=', $tag->id)->exists()) {
+                $slug = $baseSlug . '_' . $counter;
+                $counter++;
+            }
+            $data['slug'] = $slug;
+        }
+
+        $tag->update($data);
 
         return redirect()->route('admin.tags.index')
             ->with('success', 'Tag updated successfully.');

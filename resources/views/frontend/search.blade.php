@@ -35,7 +35,7 @@
                                 @if($post->tags->count() > 0)
                                     <div class="mt-2 flex flex-wrap gap-1">
                                         @foreach($post->tags as $tag)
-                                            <span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{{ $tag->name }}</span>
+                                            <span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{{ $tag->getName($langCode) }}</span>
                                         @endforeach
                                     </div>
                                 @endif

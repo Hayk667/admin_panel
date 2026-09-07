@@ -84,6 +84,7 @@
                                     </svg>
                                 </button>
                             </form>
+                            <x-language-switcher :languages="$activeLanguages" :current="$langCode" />
                             @if (Route::has('login'))
                                 <div class="hidden sm:flex items-center gap-2">
                                     @auth
@@ -116,6 +117,9 @@
                                     {{ __('Search') }}
                                 </button>
                             </form>
+                            <div>
+                                <x-language-switcher :languages="$activeLanguages" :current="$langCode" align="left" />
+                            </div>
                             <nav class="flex flex-col gap-0.5">
                                 <a href="{{ route('home') }}" class="px-3 py-2.5 rounded-md text-sm font-medium {{ request()->routeIs('home') ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50' }}">
                                     {{ __('Home') }}
@@ -197,6 +201,35 @@
                 }
                 btn.addEventListener('click', function() {
                     if (panel.classList.contains('hidden')) open(); else close();
+                });
+            })();
+            (function() {
+                function closeAll() {
+                    document.querySelectorAll('[data-lang-switcher]').forEach(function(root) {
+                        var menu = root.querySelector('[data-lang-switcher-menu]');
+                        var switcherBtn = root.querySelector('[data-lang-switcher-btn]');
+                        if (!menu || !switcherBtn) return;
+                        menu.classList.add('hidden');
+                        switcherBtn.setAttribute('aria-expanded', 'false');
+                    });
+                }
+                document.querySelectorAll('[data-lang-switcher-btn]').forEach(function(switcherBtn) {
+                    switcherBtn.addEventListener('click', function(event) {
+                        event.stopPropagation();
+                        var root = switcherBtn.closest('[data-lang-switcher]');
+                        var menu = root && root.querySelector('[data-lang-switcher-menu]');
+                        if (!menu) return;
+                        var willOpen = menu.classList.contains('hidden');
+                        closeAll();
+                        if (willOpen) {
+                            menu.classList.remove('hidden');
+                            switcherBtn.setAttribute('aria-expanded', 'true');
+                        }
+                    });
+                });
+                document.addEventListener('click', closeAll);
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape') closeAll();
                 });
             })();
         </script>

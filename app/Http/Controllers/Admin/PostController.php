@@ -33,7 +33,7 @@ class PostController extends Controller
     public function create(): View
     {
         $categories = Category::where('is_active', true)->get();
-        $tags = Tag::orderBy('name')->get();
+        $tags = Tag::where('is_active', true)->orderBy('slug')->get();
         $languages = Language::where('is_active', true)->get();
         return view('admin.posts.create', compact('categories', 'tags', 'languages'));
     }
@@ -132,7 +132,7 @@ class PostController extends Controller
         }
 
         $categories = Category::where('is_active', true)->get();
-        $tags = Tag::orderBy('name')->get();
+        $tags = Tag::where('is_active', true)->orderBy('slug')->get();
         $languages = Language::where('is_active', true)->get();
         $post->load(['category', 'tags']);
         return view('admin.posts.edit', compact('post', 'categories', 'tags', 'languages'));

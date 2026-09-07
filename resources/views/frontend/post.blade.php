@@ -27,7 +27,7 @@
                     @if($post->tags->count() > 0)
                         <span>{{ __('Tags') }}:
                             @foreach($post->tags as $tag)
-                                <span class="inline-block px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs mr-1">{{ $tag->name }}</span>
+                                <span class="inline-block px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs mr-1">{{ $tag->getName($langCode) }}</span>
                             @endforeach
                         </span>
                     @endif
@@ -68,7 +68,7 @@
                     <div class="flex flex-wrap gap-2">
                         @foreach($tags as $tag)
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                                {{ $tag->name }}
+                                {{ $tag->getName($langCode) }}
                                 @if($tag->posts_count > 0)
                                     <span class="ml-1 text-gray-500 dark:text-gray-400">({{ $tag->posts_count }})</span>
                                 @endif

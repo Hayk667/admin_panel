@@ -31,9 +31,9 @@ class AppServiceProvider extends ServiceProvider
                     $q->where('is_active', true)->orderBy('menu_order')->orderBy('id');
                 }])
                 ->get();
-            $defaultLang = Language::getDefault();
-            $langCode = $defaultLang ? $defaultLang->code : 'en';
-            $view->with(compact('menuPages', 'langCode'));
+            $langCode = Language::currentCode();
+            $activeLanguages = Language::getActive();
+            $view->with(compact('menuPages', 'langCode', 'activeLanguages'));
         });
     }
 }

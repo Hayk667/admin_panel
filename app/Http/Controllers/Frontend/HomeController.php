@@ -21,8 +21,7 @@ class HomeController extends Controller
      */
     public function search(Request $request): View
     {
-        $defaultLang = Language::getDefault();
-        $langCode = $defaultLang ? $defaultLang->code : 'en';
+        $langCode = Language::currentCode();
 
         $term = $request->input('q', '');
         $term = is_string($term) ? trim($term) : '';
@@ -42,7 +41,7 @@ class HomeController extends Controller
             ->paginate(8)
             ->withQueryString();
 
-        $tags = Tag::withCount('posts')->orderBy('name')->get();
+        $tags = Tag::where('is_active', true)->withCount('posts')->orderBy('slug')->get();
 
         return view('frontend.search', compact('posts', 'langCode', 'tags', 'term'));
     }
@@ -52,8 +51,7 @@ class HomeController extends Controller
      */
     public function index(): View
     {
-        $defaultLang = Language::getDefault();
-        $langCode = $defaultLang ? $defaultLang->code : 'en';
+        $langCode = Language::currentCode();
 
         $posts = Post::where('is_active', true)
             ->whereNotNull('published_at')
@@ -62,7 +60,7 @@ class HomeController extends Controller
             ->orderBy('published_at', 'desc')
             ->paginate(4);
 
-        $tags = Tag::withCount('posts')->orderBy('name')->get();
+        $tags = Tag::where('is_active', true)->withCount('posts')->orderBy('slug')->get();
 
         return view('frontend.welcome', compact('posts', 'langCode', 'tags'));
     }
@@ -72,8 +70,7 @@ class HomeController extends Controller
      */
     public function show(string $slug): View
     {
-        $defaultLang = Language::getDefault();
-        $langCode = $defaultLang ? $defaultLang->code : 'en';
+        $langCode = Language::currentCode();
 
         $post = Post::where('slug', $slug)
             ->where('is_active', true)
@@ -100,7 +97,7 @@ class HomeController extends Controller
             ->limit(5)
             ->get();
 
-        $tags = Tag::withCount('posts')->orderBy('name')->get();
+        $tags = Tag::where('is_active', true)->withCount('posts')->orderBy('slug')->get();
 
         return view('frontend.post', compact('post', 'recentPosts', 'tags', 'langCode', 'hasLiked', 'hasRated', 'userRating'));
     }

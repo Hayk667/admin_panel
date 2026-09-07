@@ -18,8 +18,7 @@ class PageController extends Controller
      */
     public function show(string $slug): View
     {
-        $defaultLang = Language::getDefault();
-        $langCode = $defaultLang ? $defaultLang->code : 'en';
+        $langCode = Language::currentCode();
 
         $page = Page::where('slug', $slug)
             ->where('is_active', true)
@@ -37,8 +36,7 @@ class PageController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        $defaultLang = Language::getDefault();
-        $langCode = $defaultLang ? $defaultLang->code : 'en';
+        $langCode = Language::currentCode();
         $pageTitle = $page->getTitle($langCode) ?: $page->slug;
 
         $toAddress = config('mail.contact_to') ?: config('mail.from.address');

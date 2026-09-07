@@ -17,6 +17,7 @@ class Tag extends Model
     ];
 
     protected $casts = [
+        'name' => 'array',
         'is_active' => 'boolean',
     ];
 
@@ -29,11 +30,28 @@ class Tag extends Model
     }
 
     /**
+     * Get name for specific language.
+     */
+    public function getName($languageCode = null)
+    {
+        $languageCode = $languageCode ?? Language::getDefault()?->code ?? 'en';
+        $name = $this->name;
+
+        if (is_string($name)) {
+            return $name;
+        }
+
+        return $name[$languageCode] ?? $name['en'] ?? '';
+    }
+
+    /**
      * Generate slug from name.
      */
-    public static function generateSlug(string $name): string
+    public static function generateSlug($name, $languageCode = 'en'): string
     {
-        return Str::slug($name, '_');
+        $baseName = is_array($name) ? ($name[$languageCode] ?? reset($name)) : $name;
+
+        return Str::slug($baseName, '_');
     }
 
     /**
@@ -45,7 +63,8 @@ class Tag extends Model
 
         static::creating(function ($tag) {
             if (empty($tag->slug)) {
-                $tag->slug = self::generateSlug($tag->name);
+                $langCode = Language::getDefault()?->code ?? 'en';
+                $tag->slug = self::generateSlug($tag->name, $langCode);
             }
         });
     }

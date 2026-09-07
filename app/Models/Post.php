@@ -9,10 +9,11 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use App\Services\ContentImageService;
+use App\Models\Concerns\HasJsonTranslations;
 
 class Post extends Model
 {
-    use HasFactory, SoftDeletes, HasUuids;
+    use HasFactory, SoftDeletes, HasUuids, HasJsonTranslations;
 
     protected $fillable = [
         'slug',
