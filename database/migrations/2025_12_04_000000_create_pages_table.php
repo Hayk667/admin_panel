@@ -16,7 +16,10 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->json('title')->nullable();
             $table->json('content')->nullable();
+            $table->json('sections')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->unsignedInteger('menu_order')->default(0);
+            $table->foreignId('parent_id')->nullable()->constrained('pages')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

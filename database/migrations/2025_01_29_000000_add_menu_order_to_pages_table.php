@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('pages') || Schema::hasColumn('pages', 'menu_order')) {
+            return;
+        }
+
         Schema::table('pages', function (Blueprint $table) {
             $table->unsignedInteger('menu_order')->default(0)->after('is_active');
         });
@@ -21,6 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('pages') || ! Schema::hasColumn('pages', 'menu_order')) {
+            return;
+        }
+
         Schema::table('pages', function (Blueprint $table) {
             $table->dropColumn('menu_order');
         });

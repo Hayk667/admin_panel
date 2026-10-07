@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PostResource;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,21 +28,9 @@ class PostController extends Controller
         $perPage = $perPage >= 1 && $perPage <= 100 ? $perPage : 15;
         $posts = $query->paginate($perPage);
 
-        $items = $posts->getCollection()->map(function (Post $post) {
-            return [
-                'id' => $post->id,
-                'slug' => $post->slug,
-                'title' => $post->title ?? [],
-                'content' => $post->content ?? [],
-                'created_user_name' => $post->createdUser?->name,
-                'likes' => (int) $post->likes,
-                'rate' => $post->rate !== null ? (float) $post->rate : null,
-                'views' => (int) $post->view_count,
-                'category_name' => $post->category?->name ?? [],
-                'thumbnail' => $post->thumbnail ? url('storage/' . $post->thumbnail) : null,
-                'published_at' => $post->published_at?->format('Y-m-d, H:i'),
-            ];
-        });
+        $items = $posts->getCollection()->map(
+            fn (Post $post) => (new PostResource($post))->resolve($request)
+        );
 
         return response()->json([
             'data' => $items,

@@ -22,6 +22,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Session Serialization
+    |--------------------------------------------------------------------------
+    |
+    | Laravel 13 defaults new applications to JSON session serialization.
+    | This application keeps PHP serialization so existing sessions stay valid.
+    |
+    */
+
+    'serialization' => 'php',
+
+    /*
+    |--------------------------------------------------------------------------
     | Session Lifetime
     |--------------------------------------------------------------------------
     |

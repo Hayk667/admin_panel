@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Concerns\HasVersion4Uuids;
 use App\Services\ContentImageService;
 use App\Models\Concerns\HasJsonTranslations;
 
 class Post extends Model
 {
-    use HasFactory, SoftDeletes, HasUuids, HasJsonTranslations;
+    use HasFactory, SoftDeletes, HasVersion4Uuids, HasJsonTranslations;
 
     protected $fillable = [
         'slug',

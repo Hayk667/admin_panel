@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('pages') || Schema::hasColumn('pages', 'parent_id')) {
+            return;
+        }
+
         Schema::table('pages', function (Blueprint $table) {
             $table->foreignId('parent_id')->nullable()->after('menu_order')->constrained('pages')->nullOnDelete();
         });
@@ -21,8 +25,12 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('pages') || ! Schema::hasColumn('pages', 'parent_id')) {
+            return;
+        }
+
         Schema::table('pages', function (Blueprint $table) {
-            $table->dropForeign(['parent_id']);
+            $table->dropConstrainedForeignId('parent_id');
         });
     }
 };
