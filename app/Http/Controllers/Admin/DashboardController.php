@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Models\Category;
 use App\Models\Language;
+use App\Models\Page;
+use App\Models\Tag;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -31,6 +34,11 @@ class DashboardController extends Controller
         $languagesActive = Language::where('is_active', true)->count();
         $languagesInactive = Language::where('is_active', false)->count();
 
+        $pagesTotal = Page::count();
+        $tagsTotal = Tag::count();
+        $usersTotal = User::count();
+        $recentPosts = Post::with('createdUser')->latest()->limit(5)->get();
+
         return view('admin.dashboard', compact(
             'postsTotal',
             'postsActive',
@@ -40,7 +48,11 @@ class DashboardController extends Controller
             'categoriesInactive',
             'languagesTotal',
             'languagesActive',
-            'languagesInactive'
+            'languagesInactive',
+            'pagesTotal',
+            'tagsTotal',
+            'usersTotal',
+            'recentPosts'
         ));
     }
 }

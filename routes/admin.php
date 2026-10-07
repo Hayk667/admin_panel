@@ -36,6 +36,7 @@ Route::middleware([
     Route::resource('tags', TagController::class)->except(['show']);
 
     // Posts CRUD
+    Route::post('posts/bulk', [PostController::class, 'bulk'])->name('posts.bulk');
     Route::resource('posts', PostController::class);
 
     // Pages CRUD

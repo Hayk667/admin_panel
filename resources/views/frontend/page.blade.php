@@ -197,6 +197,11 @@
                         </form>
                     </div>
                 </section>
+            @elseif ($type === 'posts')
+                @include('frontend.partials.posts-block', [
+                    'data' => $data,
+                    'langCode' => $langCode,
+                ])
             @endif
         @empty
             {{-- No sections: show page title and a message --}}
@@ -236,6 +241,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (prev) prev.addEventListener('click', function() { goTo(index - 1); });
         if (next) next.addEventListener('click', function() { goTo(index + 1); });
         setInterval(function() { goTo(index + 1); }, 5000);
+    });
+
+    document.querySelectorAll('[data-posts-block]').forEach(function (block) {
+        const buttons = block.querySelectorAll('[data-filter]');
+        const cards = block.querySelectorAll('[data-post-card]');
+        const empty = block.querySelector('[data-filter-empty]');
+        const kind = block.getAttribute('data-filter-kind');
+        buttons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const value = button.getAttribute('data-filter');
+                buttons.forEach(function (other) {
+                    other.classList.toggle('is-active', other === button);
+                });
+                let shown = 0;
+                cards.forEach(function (card) {
+                    const raw = kind === 'tags' ? (card.getAttribute('data-tags') || '') : (card.getAttribute('data-category') || '');
+                    const ids = raw.split(',').filter(Boolean);
+                    const match = value === 'all' || ids.indexOf(value) !== -1;
+                    card.hidden = !match;
+                    if (match) shown++;
+                });
+                if (empty) empty.hidden = shown !== 0;
+            });
+        });
     });
 });
 </script>

@@ -1,159 +1,260 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Posts') }}
-        </h2>
+        <h1>{{ __('Posts') }}</h1>
+        <a href="{{ route('admin.posts.create') }}" class="page-title-action">{{ __('Add Post') }}</a>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <x-notification />
+    @php
+        $activeLanguages = $languages->where('is_active', true);
+        $inactiveLanguages = $languages->where('is_active', false);
+        $dateSort = $order === 'asc'
+            ? collect($filters)->except('order')->all()
+            : array_merge($filters, ['order' => 'asc']);
+        $hasExtraFilters = collect($filters)->except('status')->isNotEmpty();
+    @endphp
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <div class="mb-4">
-                        <a href="{{ route('admin.posts.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
-                            {{ __('Create Post') }}
-                        </a>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table id="postsTable" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Title</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thumbnail</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Content</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created By</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Updated By</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Published At</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Likes</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Rate</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Views</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Is Active</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @php
-                                    $defaultLang = \App\Models\Language::getDefault();
-                                    $langCode = $defaultLang ? $defaultLang->code : 'en';
-                                    $rowNumber = 1;
-                                @endphp
-                                @foreach ($posts as $post)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ $rowNumber++ }}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ Str::limit($post->getTitle($langCode), 50) }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if ($post->thumbnail)
-                                                <img src="{{ asset('storage/' . $post->thumbnail) }}" alt="Thumbnail" class="h-16 w-16 object-cover rounded">
-                                            @else
-                                                <span class="text-gray-400">No image</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ Str::limit(strip_tags($post->getContent($langCode)), 100) }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            @if ($post->category)
-                                                {{ $post->category->getName($langCode) }}
-                                            @else
-                                                <span class="text-gray-400">No category</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $post->createdUser ? $post->createdUser->name : 'Unknown' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $post->updatedUser ? $post->updatedUser->name : '-' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $post->published_at ? $post->published_at->format('Y-m-d') : '-' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $post->likes ?? 0 }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ number_format($post->rate ?? 0, 2) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $post->view_count ?? 0 }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            @if ($post->is_active)
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                                            @else
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 text-sm font-medium">
-                                            <div class="flex flex-col gap-1">
-                                                <a href="{{ route('admin.posts.show', $post) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Show</a>
-                                                @if (auth()->user()->canEditPost($post))
-                                                    <a href="{{ route('admin.posts.edit', $post) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">Edit</a>
-                                                @else
-                                                    <span class="text-gray-400">Edit</span>
-                                                @endif
-                                                @if (auth()->user()->canDeletePost($post))
-                                                    <form action="{{ route('admin.posts.destroy', $post) }}" method="POST" class="delete-form">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-0 text-left bg-transparent border-0 cursor-pointer">Delete</button>
-                                                    </form>
-                                                @else
-                                                    <span class="text-gray-400">Delete</span>
-                                                @endif
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="wp-posts">
+        <x-notification />
+
+        <div class="list-head">
+            <div>
+                <ul class="subsubsub">
+                    <li>
+                        <a href="{{ route('admin.posts.index', collect($filters)->except('status')->all()) }}" class="{{ $status === 'all' ? 'current' : '' }}">{{ __('All') }} <span class="count">({{ $counts['all'] }})</span></a> |
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.posts.index', array_merge($filters, ['status' => 'mine'])) }}" class="{{ $status === 'mine' ? 'current' : '' }}">{{ __('Mine') }} <span class="count">({{ $counts['mine'] }})</span></a> |
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.posts.index', array_merge($filters, ['status' => 'published'])) }}" class="{{ $status === 'published' ? 'current' : '' }}">{{ __('Published') }} <span class="count">({{ $counts['published'] }})</span></a> |
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.posts.index', array_merge($filters, ['status' => 'drafts'])) }}" class="{{ $status === 'drafts' ? 'current' : '' }}">{{ __('Drafts') }} <span class="count">({{ $counts['drafts'] }})</span></a>
+                    </li>
+                </ul>
+
+                <p class="lang-line">
+                    @foreach ($activeLanguages as $language)
+                        <a href="{{ route('admin.posts.index', array_merge($filters, ['lang' => $language->code])) }}" class="{{ $languageFilter && $languageFilter->code === $language->code ? 'current' : '' }}">{{ $language->name }} <span class="count">({{ $languageCounts[$language->code] ?? 0 }})</span></a>
+                        @if (! $loop->last) | @endif
+                    @endforeach
+                    @if ($activeLanguages->isNotEmpty()) | @endif
+                    <a href="{{ route('admin.posts.index', collect($filters)->except('lang')->all()) }}" class="{{ $languageFilter ? '' : 'current' }}">{{ __('All languages') }} <span class="count">({{ $counts['all'] }})</span></a>
+                </p>
+
+                @if ($inactiveLanguages->isNotEmpty())
+                    <p class="lang-line">
+                        <span class="label">{{ __('Inactive:') }}</span>
+                        @foreach ($inactiveLanguages as $language)
+                            <a href="{{ route('admin.posts.index', array_merge($filters, ['lang' => $language->code])) }}" class="{{ $languageFilter && $languageFilter->code === $language->code ? 'current' : '' }}">{{ $language->name }} <span class="count">({{ $languageCounts[$language->code] ?? 0 }})</span></a>
+                            @if (! $loop->last) | @endif
+                        @endforeach
+                    </p>
+                @endif
             </div>
-        </div>
-    </div>
 
-    @push('scripts')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <style>
-        /* Fix DataTables styling - Add padding under search */
-        .dataTables_wrapper .dataTables_filter {
-            margin-bottom: 1rem !important;
-            padding-bottom: 1rem !important;
-        }
-        
-        /* Fix dropdown icon position */
-        .dataTables_wrapper .dataTables_length {
-            position: relative;
-        }
-        .dataTables_wrapper .dataTables_length select {
-            appearance: none !important;
-            -webkit-appearance: none !important;
-            -moz-appearance: none !important;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
-            background-repeat: no-repeat !important;
-            background-position: right 0.5rem center !important;
-            padding-right: 2rem !important;
-            position: relative;
-        }
-    </style>
-    <script>
-        $(document).ready(function() {
-            $('#postsTable').DataTable({
-                order: [[0, 'asc']],
-                pageLength: 25,
-                language: {
-                    search: "Search:",
-                    lengthMenu: "Show _MENU_ entries",
-                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                    infoEmpty: "No entries found",
-                    infoFiltered: "(filtered from _MAX_ total entries)"
-                }
-            });
-        });
-    </script>
-    @endpush
+            <form class="search-box" method="GET" action="{{ route('admin.posts.index') }}">
+                @foreach (collect($filters)->except('s') as $key => $value)
+                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endforeach
+                <label class="sr-only" for="post-search">{{ __('Search Posts') }}</label>
+                <input id="post-search" type="search" name="s" value="{{ $search }}" placeholder="{{ __('Search posts') }}">
+                <button type="submit" class="button">{{ __('Search Posts') }}</button>
+            </form>
+        </div>
+
+        <form method="POST" action="{{ route('admin.posts.bulk') }}" class="posts-filter">
+            @csrf
+            <input type="hidden" name="action" value="">
+
+            <div class="tablenav top">
+                <div class="actions">
+                    <label class="sr-only" for="bulk-action">{{ __('Bulk actions') }}</label>
+                    <select id="bulk-action" class="bulk-top">
+                        <option value="-1">{{ __('Bulk actions') }}</option>
+                        <option value="publish">{{ __('Publish') }}</option>
+                        <option value="draft">{{ __('Move to draft') }}</option>
+                        <option value="trash">{{ __('Move to Trash') }}</option>
+                    </select>
+                    <button type="submit" class="button bulk-apply" data-select=".bulk-top">{{ __('Apply') }}</button>
+                </div>
+                <div class="actions">
+                    <label class="sr-only" for="filter-month">{{ __('All dates') }}</label>
+                    <select id="filter-month" class="filter-month">
+                        <option value="">{{ __('All dates') }}</option>
+                        @foreach ($months as $row)
+                            <option value="{{ $row->ym }}" @selected((string) $month === (string) $row->ym)>{{ $row->label }} ({{ $row->total }})</option>
+                        @endforeach
+                    </select>
+                    <label class="sr-only" for="filter-category">{{ __('All Categories') }}</label>
+                    <select id="filter-category" class="filter-category">
+                        <option value="">{{ __('All Categories') }}</option>
+                        <option value="none" @selected($categoryId === 'none')>{{ __('Uncategorized') }}</option>
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}" @selected((string) $categoryId === (string) $category->id)>{{ $category->getName($langCode) }} ({{ $category->posts_count }})</option>
+                        @endforeach
+                    </select>
+                    <button type="button" class="button filter-apply">{{ __('Filter') }}</button>
+                    @if ($hasExtraFilters)
+                        <a class="button" href="{{ route('admin.posts.index', $status !== 'all' ? ['status' => $status] : []) }}">{{ __('Clear') }}</a>
+                    @endif
+                </div>
+                @include('admin.partials.posts-pagination')
+            </div>
+
+            <div class="table-scroll">
+                <table class="wp-list-table">
+                    <thead>
+                        <tr>
+                            <td class="check-column"><input type="checkbox" class="cb-select-all" aria-label="{{ __('Select all') }}"></td>
+                            <th class="column-title">{{ __('Title') }}</th>
+                            <th class="col-optional" :class="$store.postCols.cols.thumb ? 'col-show' : ''">{{ __('Thumbnail') }}</th>
+                            <th>{{ __('Languages') }}</th>
+                            <th class="column-author">{{ __('Author') }}</th>
+                            <th>{{ __('Categories') }}</th>
+                            <th>{{ __('Tags') }}</th>
+                            <th class="column-views" :class="$store.postCols.cols.views ? 'col-show' : 'col-optional'">
+                                <span title="{{ __('Views') }}">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </span>
+                            </th>
+                            <th class="column-likes col-optional" :class="$store.postCols.cols.likes ? 'col-show' : ''">{{ __('Likes') }}</th>
+                            <th class="column-rate col-optional" :class="$store.postCols.cols.rate ? 'col-show' : ''">{{ __('Rating') }}</th>
+                            <th class="column-date">
+                                <a href="{{ route('admin.posts.index', $dateSort) }}">{{ __('Date') }} {{ $order === 'asc' ? '↑' : '↓' }}</a>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($posts as $post)
+                            @php
+                                $displayCode = $languageFilter ? $languageFilter->code : $langCode;
+                                $postTitle = $post->getTitle($displayCode);
+                                if ($postTitle === '') {
+                                    $postTitle = $post->getTitle($langCode);
+                                }
+                                $canEdit = auth()->user()->canEditPost($post);
+                                $canDelete = auth()->user()->canDeletePost($post);
+                            @endphp
+                            <tr>
+                                <th class="check-column" scope="row">
+                                    <input type="checkbox" class="post-cb" name="ids[]" value="{{ $post->id }}" aria-label="{{ __('Select') }} {{ $postTitle !== '' ? $postTitle : __('(no title)') }}">
+                                </th>
+                                <td class="column-title">
+                                    <div class="title-row">
+                                        <strong>
+                                            <a href="{{ $canEdit ? route('admin.posts.edit', $post) : route('admin.posts.show', $post) }}">
+                                                {{ $postTitle !== '' ? $postTitle : __('(no title)') }}
+                                            </a>
+                                        </strong>
+                                        <span class="title-icons">
+                                            @if ($canEdit)
+                                                <a href="{{ route('admin.posts.edit', $post) }}" title="{{ __('Edit') }}">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13 7l4 4"/></svg>
+                                                </a>
+                                            @endif
+                                            @if ($post->is_active)
+                                                <a href="{{ route('post.show', $post->slug) }}" target="_blank" rel="noopener" title="{{ __('View') }}">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 5h5v5"/><path d="M10 14L19 5"/><path d="M19 13v6a1 1 0 01-1 1H6a1 1 0 01-1-1V6a1 1 0 011-1h6"/></svg>
+                                                </a>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="row-actions">
+                                        @if ($canEdit)
+                                            <span><a href="{{ route('admin.posts.edit', $post) }}">{{ __('Edit') }}</a></span>
+                                        @else
+                                            <span><a href="{{ route('admin.posts.show', $post) }}">{{ __('View') }}</a></span>
+                                        @endif
+                                        @if ($post->is_active)
+                                            <span class="muted"> | </span>
+                                            <span><a href="{{ route('post.show', $post->slug) }}" target="_blank" rel="noopener">{{ __('View') }}</a></span>
+                                        @endif
+                                        @if ($canDelete)
+                                            <span class="muted"> | </span>
+                                            <span>
+                                                <button type="submit" form="delete-post-{{ $post->id }}">{{ __('Trash') }}</button>
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="col-optional" :class="$store.postCols.cols.thumb ? 'col-show' : ''">
+                                    @if ($post->thumbnail)
+                                        <img class="thumb" src="{{ asset('storage/' . $post->thumbnail) }}" alt="">
+                                    @else
+                                        <span class="muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="lang-pills">
+                                        @foreach ($languages as $language)
+                                            @php $value = is_array($post->title) ? ($post->title[$language->code] ?? null) : null; @endphp
+                                            @if (is_string($value) && trim($value) !== '')
+                                                <span class="lang-pill" title="{{ $language->name }}">{{ strtoupper($language->code) }}</span>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </td>
+                                <td>
+                                    @if ($post->createdUser)
+                                        <a href="{{ route('admin.posts.index', array_merge($filters, ['author' => $post->created_user_id])) }}">{{ $post->createdUser->name }}</a>
+                                    @else
+                                        <span class="muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($post->category)
+                                        <a href="{{ route('admin.posts.index', array_merge($filters, ['category' => $post->category_id])) }}">{{ $post->category->getName($langCode) }}</a>
+                                    @else
+                                        <span class="muted">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @forelse ($post->tags as $tag)
+                                        <a href="{{ route('admin.posts.index', array_merge($filters, ['tag' => $tag->id])) }}">{{ $tag->getName($langCode) }}</a>@if (! $loop->last), @endif
+                                    @empty
+                                        <span class="muted">—</span>
+                                    @endforelse
+                                </td>
+                                <td class="column-views" :class="$store.postCols.cols.views ? 'col-show' : 'col-optional'">{{ $post->view_count ?? 0 }}</td>
+                                <td class="column-likes col-optional" :class="$store.postCols.cols.likes ? 'col-show' : ''">{{ $post->likes ?? 0 }}</td>
+                                <td class="column-rate col-optional" :class="$store.postCols.cols.rate ? 'col-show' : ''">{{ number_format($post->rate ?? 0, 1) }}</td>
+                                <td class="column-date">
+                                    <span class="post-state">{{ $post->is_active ? __('Published') : __('Draft') }}</span>
+                                    {{ $post->created_at?->format('Y/m/d \a\t g:i a') }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="11">{{ __('No posts found.') }}</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tablenav bottom">
+                <div class="actions">
+                    <label class="sr-only" for="bulk-action-bottom">{{ __('Bulk actions') }}</label>
+                    <select id="bulk-action-bottom" class="bulk-bottom">
+                        <option value="-1">{{ __('Bulk actions') }}</option>
+                        <option value="publish">{{ __('Publish') }}</option>
+                        <option value="draft">{{ __('Move to draft') }}</option>
+                        <option value="trash">{{ __('Move to Trash') }}</option>
+                    </select>
+                    <button type="submit" class="button bulk-apply" data-select=".bulk-bottom">{{ __('Apply') }}</button>
+                </div>
+                @include('admin.partials.posts-pagination')
+            </div>
+        </form>
+
+        @foreach ($posts as $post)
+            @if (auth()->user()->canDeletePost($post))
+                <form id="delete-post-{{ $post->id }}" action="{{ route('admin.posts.destroy', $post) }}" method="POST" class="delete-form">
+                    @csrf
+                    @method('DELETE')
+                </form>
+            @endif
+        @endforeach
+    </div>
 </x-app-layout>

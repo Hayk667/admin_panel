@@ -21,10 +21,136 @@ class PostController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $posts = Post::with(['category', 'createdUser', 'updatedUser'])->latest()->get();
-        return view('admin.posts.index', compact('posts'));
+        $status = $request->query('status', 'all');
+        if (! in_array($status, ['all', 'mine', 'published', 'drafts'], true)) {
+            $status = 'all';
+        }
+
+        $order = $request->query('order') === 'asc' ? 'asc' : 'desc';
+        $search = trim((string) $request->query('s', ''));
+        $month = $request->query('m');
+        $categoryId = $request->query('category');
+        $authorId = $request->query('author');
+        $tagId = $request->query('tag');
+
+        $languageFilter = null;
+        if ($request->filled('lang')) {
+            $candidate = Language::where('code', $request->query('lang'))->first();
+            if ($candidate && preg_match('/^[A-Za-z0-9_-]{2,10}$/', $candidate->code)) {
+                $languageFilter = $candidate;
+            }
+        }
+
+        $query = Post::with(['category', 'createdUser', 'tags']);
+
+        if ($status === 'mine') {
+            $query->where('created_user_id', auth()->id());
+        } elseif ($status === 'published') {
+            $query->where('is_active', true);
+        } elseif ($status === 'drafts') {
+            $query->where('is_active', false);
+        }
+
+        if ($languageFilter) {
+            $query->whereNotNull('title->'.$languageFilter->code)
+                ->where('title->'.$languageFilter->code, '!=', '');
+        }
+
+        if ($categoryId === 'none') {
+            $query->whereNull('category_id');
+        } elseif (is_string($categoryId) && ctype_digit($categoryId)) {
+            $query->where('category_id', $categoryId);
+        } else {
+            $categoryId = null;
+        }
+
+        if (is_string($authorId) && ctype_digit($authorId)) {
+            $query->where('created_user_id', $authorId);
+        } else {
+            $authorId = null;
+        }
+
+        if (is_string($tagId) && ctype_digit($tagId)) {
+            $query->whereHas('tags', function ($q) use ($tagId) {
+                $q->where('tags.id', $tagId);
+            });
+        } else {
+            $tagId = null;
+        }
+
+        if (is_string($month) && preg_match('/^\d{6}$/', $month)) {
+            $query->whereRaw("DATE_FORMAT(COALESCE(published_at, created_at), '%Y%m') = ?", [$month]);
+        } else {
+            $month = null;
+        }
+
+        if ($search !== '') {
+            $query->search($search);
+        }
+
+        $query->orderByRaw('COALESCE(published_at, created_at) '.($order === 'asc' ? 'asc' : 'desc'));
+
+        $posts = $query->paginate(20)->withQueryString();
+
+        $counts = [
+            'all' => Post::count(),
+            'mine' => Post::where('created_user_id', auth()->id())->count(),
+            'published' => Post::where('is_active', true)->count(),
+            'drafts' => Post::where('is_active', false)->count(),
+        ];
+
+        $languages = Language::orderByDesc('is_active')->orderBy('name')->get();
+        $titleRows = Post::query()->get(['title']);
+        $languageCounts = [];
+        foreach ($languages as $language) {
+            $languageCounts[$language->code] = $titleRows->filter(function ($row) use ($language) {
+                $value = is_array($row->title) ? ($row->title[$language->code] ?? null) : null;
+
+                return is_string($value) && trim($value) !== '';
+            })->count();
+        }
+
+        $categories = Category::withCount('posts')->orderBy('slug')->get();
+        $months = Post::query()
+            ->selectRaw("DATE_FORMAT(COALESCE(published_at, created_at), '%Y%m') as ym")
+            ->selectRaw("ANY_VALUE(DATE_FORMAT(COALESCE(published_at, created_at), '%M %Y')) as label")
+            ->selectRaw('COUNT(*) as total')
+            ->groupBy('ym')
+            ->orderByDesc('ym')
+            ->get();
+
+        $defaultLang = Language::getDefault();
+        $langCode = $defaultLang ? $defaultLang->code : 'en';
+
+        $filters = array_filter([
+            'status' => $status !== 'all' ? $status : null,
+            'lang' => $languageFilter?->code,
+            'category' => $categoryId,
+            'm' => $month,
+            's' => $search !== '' ? $search : null,
+            'order' => $order === 'asc' ? 'asc' : null,
+            'author' => $authorId,
+            'tag' => $tagId,
+        ], fn ($value) => $value !== null && $value !== '');
+
+        return view('admin.posts.index', compact(
+            'posts',
+            'counts',
+            'languages',
+            'languageCounts',
+            'categories',
+            'months',
+            'langCode',
+            'status',
+            'order',
+            'search',
+            'month',
+            'categoryId',
+            'languageFilter',
+            'filters'
+        ));
     }
 
     /**
@@ -251,5 +377,69 @@ class PostController extends Controller
 
         return redirect()->route('admin.posts.index')
             ->with('success', 'Post deleted successfully.');
+    }
+
+    /**
+     * Apply a bulk action to the selected posts.
+     */
+    public function bulk(Request $request): RedirectResponse
+    {
+        $action = $request->input('action');
+        $ids = array_slice(array_values(array_filter((array) $request->input('ids', []), function ($id) {
+            return is_string($id) && $id !== '';
+        })), 0, 100);
+
+        if (! in_array($action, ['trash', 'publish', 'draft'], true) || $ids === []) {
+            return redirect()->back()->with('error', 'Select an action and at least one post.');
+        }
+
+        $posts = Post::whereIn('id', $ids)->get();
+        $updated = 0;
+
+        foreach ($posts as $post) {
+            if ($action === 'trash') {
+                if (! auth()->user()->canDeletePost($post)) {
+                    continue;
+                }
+                $post->delete();
+                $updated++;
+                continue;
+            }
+
+            if (! auth()->user()->canEditPost($post)) {
+                continue;
+            }
+
+            if ($action === 'publish') {
+                $post->is_active = true;
+                if (! $post->published_at) {
+                    $post->published_at = now()->toDateString();
+                }
+            } else {
+                $post->is_active = false;
+            }
+
+            $post->updated_user_id = auth()->id();
+            $post->save();
+            $updated++;
+        }
+
+        $skipped = $posts->count() - $updated;
+
+        if ($updated === 0) {
+            return redirect()->back()->with('error', 'You do not have permission to change the selected posts.');
+        }
+
+        if ($action === 'trash') {
+            $message = $updated === 1 ? '1 post moved to the trash.' : $updated.' posts moved to the trash.';
+        } else {
+            $message = $updated === 1 ? '1 post updated.' : $updated.' posts updated.';
+        }
+
+        if ($skipped > 0) {
+            $message .= ' '.$skipped.' skipped.';
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 }

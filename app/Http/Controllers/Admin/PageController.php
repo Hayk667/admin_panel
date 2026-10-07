@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Page;
 use App\Models\Language;
+use App\Models\Category;
+use App\Models\Tag;
 use App\Http\Requests\StorePageRequest;
 use App\Http\Requests\UpdatePageRequest;
 use App\Services\ContentImageService;
@@ -28,7 +30,10 @@ class PageController extends Controller
     public function create(): View
     {
         $languages = Language::where('is_active', true)->get();
-        return view('admin.pages.create', compact('languages'));
+        $layoutLang = Language::getDefault()?->code ?? 'en';
+        $categories = Category::query()->orderBy('slug')->get();
+        $tags = Tag::query()->orderBy('slug')->get();
+        return view('admin.pages.create', compact('languages', 'layoutLang', 'categories', 'tags'));
     }
 
     /**
@@ -70,7 +75,10 @@ class PageController extends Controller
     public function edit(Page $page): View
     {
         $languages = Language::where('is_active', true)->get();
-        return view('admin.pages.edit', compact('page', 'languages'));
+        $layoutLang = Language::getDefault()?->code ?? 'en';
+        $categories = Category::query()->orderBy('slug')->get();
+        $tags = Tag::query()->orderBy('slug')->get();
+        return view('admin.pages.edit', compact('page', 'languages', 'layoutLang', 'categories', 'tags'));
     }
 
     /**

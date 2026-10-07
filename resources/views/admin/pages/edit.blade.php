@@ -29,6 +29,7 @@
                                     <option value="description">{{ __('Description') }}</option>
                                     <option value="inputs">{{ __('Inputs (Text, Email, Phone)') }}</option>
                                     <option value="send_email_form">{{ __('Send Email Form') }}</option>
+                                    <option value="posts">{{ __('Posts') }}</option>
                                 </select>
                                 <button type="button" id="add-block-btn" class="inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     {{ __('Add') }}
@@ -67,13 +68,15 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const languages = @json($languages->map(fn($l) => ['code' => $l->code, 'name' => $l->name]));
+            const postCategories = @json($categories->map(fn ($category) => ['id' => $category->id, 'name' => $category->getName($layoutLang)]));
+            const postTags = @json($tags->map(fn ($tag) => ['id' => $tag->id, 'name' => $tag->getName($layoutLang)]));
 
             let sections = @json(old('sections', $page->sections ?? []));
             if (!Array.isArray(sections)) sections = [];
             sections = sections.map(s => ({
                 id: (s.id && String(s.id).startsWith('s-')) ? s.id : uid(),
                 type: s.type || 'title',
-                data: s.data || emptyData(s.type || 'title')
+                data: Object.assign(emptyData(s.type || 'title'), s.data || {})
             }));
 
             const sectionLabels = {
@@ -82,7 +85,8 @@
                 title: '{{ __("Title") }}',
                 description: '{{ __("Description") }}',
                 inputs: '{{ __("Inputs") }}',
-                send_email_form: '{{ __("Send Email Form") }}'
+                send_email_form: '{{ __("Send Email Form") }}',
+                posts: '{{ __("Posts") }}'
             };
 
             const phoneTypes = [
@@ -125,6 +129,26 @@
                         data.content = { ...langObj };
                         data.content_label = { ...langObj };
                         data.send_button = { ...langObj };
+                        break;
+                    case 'posts':
+                        data.limit = 15;
+                        data.category_ids = ['all'];
+                        data.tag_ids = ['all'];
+                        data.order = 'desc';
+                        data.order_by = 'date';
+                        data.columns = 3;
+                        data.gap = 30;
+                        data.show_author = false;
+                        data.show_date = true;
+                        data.show_categories = false;
+                        data.show_tags = false;
+                        data.show_text = true;
+                        data.text_source = 'excerpt';
+                        data.text_length = 125;
+                        data.show_read_more = false;
+                        data.open_new_tab = false;
+                        data.use_filter = true;
+                        data.filter_using = 'categories';
                         break;
                     default:
                         data.raw = {};
@@ -250,6 +274,133 @@
                 sections.splice(toIndex, 0, item);
                 renderSections();
                 syncSectionsInput();
+            }
+
+            function escAttr(value) {
+                return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+            }
+
+            function isOn(value, fallback) {
+                if (value === true || value === 1 || value === '1') return true;
+                if (value === false || value === 0 || value === '0') return false;
+                return fallback;
+            }
+
+            function idList(values) {
+                const list = Array.isArray(values) ? values.map(String) : ['all'];
+                return list.length ? list : ['all'];
+            }
+
+            function yesNoSelect(key, value, fallback) {
+                const on = isOn(value, fallback);
+                return `<select class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="${key}" data-cast="bool">
+                    <option value="1" ${on ? 'selected' : ''}>{{ __('Yes') }}</option>
+                    <option value="0" ${on ? '' : 'selected'}>{{ __('No') }}</option>
+                </select>`;
+            }
+
+            function multiOptions(items, selected) {
+                const chosen = idList(selected);
+                const all = `<option value="all" ${chosen.includes('all') ? 'selected' : ''}>{{ __('all') }}</option>`;
+                const rest = items.map(item => `<option value="${item.id}" ${chosen.includes(String(item.id)) ? 'selected' : ''}>${escAttr(item.name)}</option>`).join('');
+                return all + rest;
+            }
+
+            function postsEditorHtml(data) {
+                const columns = [1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${String(data.columns) === String(n) ? 'selected' : ''}>${n}</option>`).join('');
+                const filterHidden = isOn(data.use_filter, true) ? '' : 'hidden';
+                return `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Number of Posts to load') }}</label>
+                            <input type="number" min="1" max="100" class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="limit" data-cast="number" value="${data.limit ?? 15}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Category') }}</label>
+                            <select multiple size="6" class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="category_ids">${multiOptions(postCategories, data.category_ids)}</select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Tags') }}</label>
+                            <select multiple size="6" class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="tag_ids">${multiOptions(postTags, data.tag_ids)}</select>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Order') }}</label>
+                                <select class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="order">
+                                    <option value="desc" ${data.order !== 'asc' ? 'selected' : ''}>{{ __('Descending') }}</option>
+                                    <option value="asc" ${data.order === 'asc' ? 'selected' : ''}>{{ __('Ascending') }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Order By') }}</label>
+                                <select class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="order_by">
+                                    <option value="date" ${data.order_by !== 'title' ? 'selected' : ''}>{{ __('Date') }}</option>
+                                    <option value="title" ${data.order_by === 'title' ? 'selected' : ''}>{{ __('Title') }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Number of items per line?') }}</label>
+                                <select class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="columns" data-cast="number">${columns}</select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Choose the space between the items') }}</label>
+                                <input type="number" min="0" max="80" class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="gap" data-cast="number" value="${data.gap ?? 30}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Show author name?') }}</label>
+                                ${yesNoSelect('show_author', data.show_author, false)}
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Show date?') }}</label>
+                                ${yesNoSelect('show_date', data.show_date, true)}
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Show categories?') }}</label>
+                                ${yesNoSelect('show_categories', data.show_categories, false)}
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Show tags?') }}</label>
+                                ${yesNoSelect('show_tags', data.show_tags, false)}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Show text?') }}</label>
+                            ${yesNoSelect('show_text', data.show_text, true)}
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Select text source') }}</label>
+                                <select class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="text_source">
+                                    <option value="excerpt" ${data.text_source !== 'content' ? 'selected' : ''}>{{ __('Excerpt') }}</option>
+                                    <option value="content" ${data.text_source === 'content' ? 'selected' : ''}>{{ __('Content') }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Number of Characters to show') }}</label>
+                                <input type="number" min="1" max="2000" class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="text_length" data-cast="number" value="${data.text_length ?? 125}">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Show read more link?') }}</label>
+                            ${yesNoSelect('show_read_more', data.show_read_more, false)}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Open link in a new page?') }}</label>
+                            ${yesNoSelect('open_new_tab', data.open_new_tab, false)}
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Use a filter?') }}</label>
+                            ${yesNoSelect('use_filter', data.use_filter, true)}
+                        </div>
+                        <div class="posts-filter-using ${filterHidden}">
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">{{ __('Filter using :') }}</label>
+                            <select class="posts-field w-full rounded border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" data-key="filter_using">
+                                <option value="categories" ${data.filter_using !== 'tags' ? 'selected' : ''}>{{ __('Categories') }}</option>
+                                <option value="tags" ${data.filter_using === 'tags' ? 'selected' : ''}>{{ __('Tags') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
             }
 
             function getBlockEditorHTML(section) {
@@ -417,6 +568,8 @@
                             </div>
                         `).join('')}
                     `;
+                } else if (type === 'posts') {
+                    inner = postsEditorHtml(data);
                 }
 
                 return `
@@ -742,6 +895,44 @@
                         renderSections();
                         syncSectionsInput();
                     };
+                });
+
+                document.querySelectorAll('.posts-field').forEach(input => {
+                    const handler = function() {
+                        const sectionItem = this.closest('.section-item');
+                        const section = sections.find(s => s.id === sectionItem.dataset.sectionId);
+                        if (!section || section.type !== 'posts') return;
+                        const key = this.dataset.key;
+                        if (this.dataset.cast === 'bool') {
+                            section.data[key] = this.value === '1';
+                            if (key === 'use_filter') {
+                                const wrap = sectionItem.querySelector('.posts-filter-using');
+                                if (wrap) wrap.classList.toggle('hidden', this.value !== '1');
+                            }
+                        } else if (this.dataset.cast === 'number') {
+                            section.data[key] = this.value === '' ? '' : Number(this.value);
+                        } else if (this.multiple) {
+                            let values = Array.from(this.selectedOptions).map(option => option.value);
+                            const previous = idList(section.data[key]);
+                            const hadAll = previous.includes('all');
+                            const hasAll = values.includes('all');
+                            if (hasAll && !hadAll) {
+                                values = ['all'];
+                            } else if (hasAll && values.length > 1) {
+                                values = values.filter(value => value !== 'all');
+                            }
+                            if (values.length === 0) values = ['all'];
+                            Array.from(this.options).forEach(option => {
+                                option.selected = values.includes(option.value);
+                            });
+                            section.data[key] = values;
+                        } else {
+                            section.data[key] = this.value;
+                        }
+                        syncSectionsInput();
+                    };
+                    input.addEventListener('change', handler);
+                    if (input.tagName !== 'SELECT') input.addEventListener('input', handler);
                 });
             }
 
